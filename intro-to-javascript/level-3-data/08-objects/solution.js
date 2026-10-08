@@ -3,7 +3,7 @@
 // =============================================================
 
 const student = {
-  name: "Sara",
+  name: "mohammed",
   age: 20,
   courses: ["HTML", "CSS"],
 };
@@ -18,7 +18,7 @@ const key = "age";
 const studentAge = student[key];
 
 // TODO 3: setting a property that doesn't exist yet creates it.
-student.email = "sara@example.com";
+student.email = "mohammed@example.com";
 
 // TODO 4: student.courses IS an array, so it has every array method.
 student.courses.push("JavaScript");

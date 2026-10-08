@@ -3,7 +3,7 @@
 // =============================================================
 
 const student = {
-  name: "Sara",
+  name: "mohammed",
   age: 20,
   courses: ["HTML", "CSS"], // a value can be an array…
 };
@@ -18,14 +18,14 @@ const key = "age";
 //         const studentAge = student[ ... ]
 
 
-// TODO 3: add a new property: student.email = "sara@example.com"
+// TODO 3: add a new property: student.email = "mohammed@example.com"
 
 
 // TODO 4: add "JavaScript" to the student's courses array
 //         (student.courses is an array, so which method adds to an array?)
 
 
-// TODO 5: return "Sara is 20 and takes 3 courses."
+// TODO 5: return "mohammed is 20 and takes 3 courses."
 //         Use person.name, person.age and person.courses.length.
 //         Use `person`, not `student`, so it works for ANY object passed in.
 function describe(person) {

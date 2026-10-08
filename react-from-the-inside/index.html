@@ -1,0 +1,2501 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>React from the Inside</title>
+  <link rel="stylesheet" href="css/deck.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-logo" viewBox="-11.5 -10.23 23 20.46" aria-hidden="true"><circle r="2.05" fill="#61dafb"/><g stroke="#61dafb" stroke-width="1" fill="none"><ellipse rx="11" ry="4.2"/><ellipse rx="11" ry="4.2" transform="rotate(60)"/><ellipse rx="11" ry="4.2" transform="rotate(120)"/></g></svg>
+    <span class="brand-name">React from the inside</span>
+  </div>
+  <div class="part-label" id="part-label"></div>
+  <div class="controls">
+    <button class="icon-btn" id="overview-btn" title="All slides (O)" aria-label="All slides">☰</button>
+    <button class="icon-btn" id="theme-btn" title="Light / dark (T)" aria-label="Toggle theme">◐</button>
+    <button class="icon-btn" id="fs-btn" title="Fullscreen (F)" aria-label="Fullscreen">⛶</button>
+    <span class="counter" id="counter"></span>
+  </div>
+</header>
+
+<main class="deck" id="deck">
+
+<!-- ═══════════════════════════════ INTRO ═══════════════════════════════ -->
+
+<section class="slide title-slide" data-title="Title" data-part="0">
+  <svg class="atom" viewBox="-11.5 -10.23 23 20.46" aria-hidden="true"><circle r="2.05" fill="#61dafb"/><g stroke="#61dafb" stroke-width="1" fill="none"><ellipse rx="11" ry="4.2"/><ellipse rx="11" ry="4.2" transform="rotate(60)"/><ellipse rx="11" ry="4.2" transform="rotate(120)"/></g></svg>
+  <div class="wrap">
+    <p class="kicker">Frontend · deep dive</p>
+    <h1><span class="react-word">React</span> from the inside</h1>
+    <p class="lead">Components, state, effects, and the bugs you get when you use them without knowing <b>why</b> they work.</p>
+    <div class="formula" aria-label="UI equals f of state">
+      <span>UI</span><span>=</span><span class="fx">f(</span>
+      <span class="cycle"><span class="state-chip">{ liked: false }</span><span class="state-chip">{ liked: true }</span></span>
+      <span class="fx">)</span><span>→</span>
+      <span class="cycle"><span class="ui-chip">🤍 Like</span><span class="ui-chip">❤️ Liked</span></span>
+    </div>
+    <p class="hint">Press <kbd>→</kbd> to start · <kbd>O</kbd> all slides · <kbd>R</kbd> re-run the code · <kbd>T</kbd> theme · <kbd>F</kbd> fullscreen</p>
+  </div>
+</section>
+
+<section class="slide" data-title="The map" data-part="0">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Today</p><h2>Six parts</h2></div>
+    <div class="agenda">
+      <a href="#" data-goto="#part-1" style="--c: var(--p1)"><div class="num">1</div><h3>JSX &amp; components</h3><p>What JSX really is. Components, props, lists, conditions.</p></a>
+      <a href="#" data-goto="#part-2" style="--c: var(--p2)"><div class="num">2</div><h3>State &amp; events</h3><p><code>useState</code>, the render cycle, snapshots, immutability, forms.</p></a>
+      <a href="#" data-goto="#part-3" style="--c: var(--p3)"><div class="num">3</div><h3>Effects &amp; refs</h3><p><code>useEffect</code>, cleanup, StrictMode, fetching, <code>useRef</code>.</p></a>
+      <a href="#" data-goto="#part-4" style="--c: var(--p4)"><div class="num">4</div><h3>Sharing state &amp; logic</h3><p>Context, <code>useReducer</code>, custom hooks, the rules of hooks.</p></a>
+      <a href="#" data-goto="#part-5" style="--c: var(--p5)"><div class="num">5</div><h3>Rendering &amp; performance</h3><p>When React re-renders, <code>memo</code>, <code>useMemo</code>, <code>useCallback</code>, keys.</p></a>
+      <a href="#" data-goto="#part-6" style="--c: var(--p6)"><div class="num">6</div><h3>14 real bugs</h3><p>Run each one, watch it break, find out why, then fix it.</p></a>
+    </div>
+    <p class="rule step">Every example is <b>real React running in this page</b>. Click inside the <b>Preview</b>, press <b>▶ Run</b>, or <b>✎ Edit</b> the code live.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Why React? Imperative vs declarative" data-part="0">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Why React exists</p><h2>Stop giving the DOM orders. <u>Describe</u> the screen.</h2></div>
+    <div class="cols">
+      <div class="stack" style="display:flex;flex-direction:column;gap:.5rem">
+        <h3>Plain JavaScript: <span class="muted">imperative</span></h3>
+<script type="text/x-code">
+let count = 0;
+button.addEventListener('click', () => {
+  count++;
+  label.textContent = count;            // update the text
+  if (count > 5) label.classList.add('hot'); // don't forget this
+  resetBtn.disabled = count === 0;      // …or this
+  badge.hidden = count === 0;           // …or this!
+});
+// Every new feature = more "if X changed, also update Y"
+</script>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.5rem">
+        <h3>React: <span class="muted">declarative</span></h3>
+<script type="text/x-code">
+function Counter() {
+  const [count, setCount] = useState(0);
+  return (
+    <>
+      <span className={count > 5 ? 'hot' : ''}>{count}</span>
+      <button onClick={() => setCount(count + 1)}>+1</button>
+      <button disabled={count === 0}>Reset</button>
+    </>
+  );
+}
+</script>
+      </div>
+    </div>
+    <div class="rule big step">UI = f(state). You describe what the screen looks like for <i>any</i> state. React works out which DOM changes to make.<small>You change the <b>data</b>. React keeps the <b>screen</b> in sync.</small></div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART 1 ═══════════════════════════════ -->
+
+<section class="slide divider" id="part-1" data-title="Part 1 · JSX & components" data-part="1">
+  <div class="wrap">
+    <div class="part-num">01</div>
+    <h1>JSX &amp; components</h1>
+    <p class="lead">A React app is a tree of <b>components</b>. A component is a JavaScript function that returns a description of some UI.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Your first component" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Components</p><h2>A component is a function that returns UI</h2></div>
+    <div class="runner">
+      <ul class="points r-notes">
+        <li class="step">It's a <b>normal JavaScript function</b>.</li>
+        <li class="step">Its name <b>starts with a capital letter</b>: <code>Greeting</code>, not <code>greeting</code>.</li>
+        <li class="step">It <b>returns JSX</b>: HTML-looking syntax that describes what to show.</li>
+        <li class="step">You use it <b>like a tag</b>, <code>&lt;Greeting /&gt;</code>, as many times as you want.</li>
+        <li class="step">Every example here has an <code>App</code> component. That's what the Preview shows.</li>
+      </ul>
+<script type="text/x-snippet" data-label="First component">
+function Greeting() {
+  return <h2>Hello, React 👋</h2>;
+}
+
+function App() {
+  return (
+    <div>
+      <Greeting />
+      <Greeting />
+      <Greeting />
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="JSX is just JavaScript" data-part="1">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Under the hood · press → to follow it</p>
+      <h2>JSX is not HTML. It's JavaScript that <u>describes</u> HTML.</h2>
+    </div>
+    <div class="jsx-chain"></div>
+    <p class="muted step">Every box above was produced live in this page by Babel and React. Click <b>{ } Compiled</b> on any example to see its compiled version.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="JSX rules" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">JSX rules</p><h2>The 6 rules of JSX</h2></div>
+    <div class="runner">
+      <ol class="points tight r-notes">
+        <li class="step"><b>One parent</b> element. Use a Fragment <code>&lt;&gt;…&lt;/&gt;</code> if you don't want an extra <code>div</code>.</li>
+        <li class="step"><code>className</code>, not <code>class</code>. <code>htmlFor</code>, not <code>for</code>. (<code>class</code> and <code>for</code> are JavaScript words.)</li>
+        <li class="step"><b>Close every tag</b>: <code>&lt;input /&gt;</code>, <code>&lt;br /&gt;</code>.</li>
+        <li class="step"><code>{ }</code> opens a window into JavaScript: variables, math, function calls, ternaries.</li>
+        <li class="step"><b>camelCase</b>: <code>onClick</code>, <code>tabIndex</code>. <code>style</code> takes an <b>object</b>: <code>style={{ color: 'red' }}</code>.</li>
+        <li class="step"><b>Capital letter</b> = your component. lowercase = HTML tag.</li>
+      </ol>
+<script type="text/x-snippet" data-label="✅ The rules" data-kind="fix">
+function App() {
+  const name = 'Sara';
+  const isAdmin = true;
+  return (
+    <>
+      <h2 className="title">Hi, {name}!</h2>
+      <p>2 + 2 = {2 + 2}</p>
+      <label htmlFor="email">Email</label>
+      <input id="email" placeholder="close every tag" />
+      <p style={{ color: 'tomato', fontWeight: 700 }}>
+        {isAdmin ? 'Admin' : 'Student'}
+      </p>
+      <button onClick={() => console.log('clicked')}>onClick, camelCase</button>
+    </>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 Two parents" data-kind="bug">
+function App() {
+  return (
+    <h2>Title</h2>
+    <p>Paragraph</p>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 class / for" data-kind="bug">
+function App() {
+  return (
+    <label class="title" for="email">Email</label>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 lowercase component" data-kind="bug">
+function greeting() {
+  return <h2>Hello!</h2>;
+}
+
+function App() {
+  return <greeting />;
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Props" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Props</p><h2>Props: the arguments of a component</h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step">Pass them like HTML attributes: <code>&lt;ProfileCard name="Sara" /&gt;</code>. Use <code>{ }</code> for anything that isn't a string.</li>
+        <li class="step">Receive them as <b>one object</b>. We usually destructure it: <code>function ProfileCard({ name, role })</code>.</li>
+        <li class="step">Default values work like normal JS: <code>{ online = false }</code>.</li>
+        <li class="step">Whatever is between the tags arrives as <code>children</code>.</li>
+        <li class="step"><b>Props are read-only.</b> A component never changes its own props (see the 🐞 tab).</li>
+      </ul>
+<script type="text/x-snippet" data-label="Props">
+function Avatar({ name }) {
+  return <div className="avatar">{name[0]}</div>;
+}
+
+function ProfileCard({ name, role, online = false }) {
+  return (
+    <div className="card row">
+      <Avatar name={name} />
+      <div>
+        <b>{name}</b> {online && '🟢'}
+        <div className="muted">{role}</div>
+      </div>
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <ProfileCard name="Sara" role="Frontend" online={true} />
+      <ProfileCard name="Omar" role="Design" />
+    </>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="children">
+function Panel({ title, children }) {
+  return (
+    <div className="card">
+      <h3>{title}</h3>
+      {children}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <Panel title="Today">
+      <p>Anything between the tags arrives as <b>children</b>.</p>
+      <button>Even buttons</button>
+    </Panel>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 Changing a prop" data-kind="bug">
+function Price(props) {
+  props.amount = props.amount * 1.05; // ❌ props are read-only
+  return <p>{props.amount} AED</p>;
+}
+
+function App() {
+  return <Price amount={100} />;
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Props flow down" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">The component tree</p><h2>Data flows <u>down</u> the tree as props</h2></div>
+    <div class="tree-demo" data-tree="todo" data-scenes="props"></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Conditional rendering" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Conditions</p><h2>Showing things conditionally: it's just JavaScript</h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step"><b>Early return</b>: <code>if (!loggedIn) return &lt;Login /&gt;;</code></li>
+        <li class="step"><b>Ternary</b>, for this or that: <code>{ok ? &lt;A /&gt; : &lt;B /&gt;}</code></li>
+        <li class="step"><b><code>&amp;&amp;</code></b>, for this or nothing: <code>{isNew &amp;&amp; &lt;Badge /&gt;}</code></li>
+        <li class="step">⚠ <code>{count &amp;&amp; …}</code> prints <b>0</b> when count is 0. That's Bug 9. Use <code>count &gt; 0 &amp;&amp;</code>.</li>
+        <li class="step"><code>null</code>, <code>false</code> and <code>undefined</code> render nothing.</li>
+      </ul>
+<script type="text/x-snippet" data-label="Three ways">
+function Inbox({ loggedIn, messages }) {
+  if (!loggedIn) {
+    return <p className="card">🔒 Please log in.</p>;
+  }
+  return (
+    <div className="card">
+      <b>Inbox</b>{' '}
+      {messages.length > 0 && <span className="badge">{messages.length}</span>}
+      {messages.length === 0 ? <p className="muted">No messages 🎉</p> : <p>You have mail.</p>}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <Inbox loggedIn={false} messages={[]} />
+      <Inbox loggedIn={true} messages={[]} />
+      <Inbox loggedIn={true} messages={['Hi', 'Lunch?']} />
+    </>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Lists & keys" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Lists</p><h2>Lists: <code>.map()</code> data to JSX, and give each item a <code>key</code></h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step">There's no special loop syntax. Use the array methods from the JS sessions: <code>map</code>, <code>filter</code>.</li>
+        <li class="step">Each item needs a <code>key</code>: a <b>stable, unique id</b> that tells React which item is which between renders.</li>
+        <li class="step">Without it, React warns in the console (🐞 tab). With the <b>index</b> as key, reordering mixes items up. That's Bug 7.</li>
+        <li class="step">Keys come from your <b>data</b> (a database id). Not from <code>Math.random()</code>, and not the index if the list can change.</li>
+      </ul>
+<script type="text/x-snippet" data-label="✅ map + key" data-kind="fix">
+const todos = [
+  { id: 1, text: 'Learn JSX' },
+  { id: 2, text: 'Learn props' },
+  { id: 3, text: 'Learn state' },
+];
+
+function App() {
+  return (
+    <ul>
+      {todos.map((todo) => (
+        <li key={todo.id}>{todo.text}</li>
+      ))}
+    </ul>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 No key" data-kind="bug">
+const todos = [
+  { id: 1, text: 'Learn JSX' },
+  { id: 2, text: 'Learn props' },
+  { id: 3, text: 'Learn state' },
+];
+
+function App() {
+  return (
+    <ul>
+      {todos.map((todo) => (
+        <li>{todo.text}</li>
+      ))}
+    </ul>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="filter, then map">
+const people = [
+  { id: 1, name: 'Sara', team: 'Frontend' },
+  { id: 2, name: 'Omar', team: 'Design' },
+  { id: 3, name: 'Lina', team: 'Frontend' },
+];
+
+function App() {
+  const frontend = people.filter((p) => p.team === 'Frontend');
+  return (
+    <ul>
+      {frontend.map((p) => <li key={p.id}>{p.name}</li>)}
+    </ul>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Quiz: JSX & props" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Quiz · click a card to flip it</p><h2>Will it work?</h2></div>
+    <div class="flips">
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 1</span><code class="hl">&lt;div class="box"&gt;Hi&lt;/div&gt;</code></span>
+        <span class="face back"><span class="ans bad">⚠ Warning</span><span class="exp">In JSX it's <code>className</code>. <code>class</code> is a JS keyword.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 2</span><code class="hl">function card() { … }
+&lt;card /&gt;</code></span>
+        <span class="face back"><span class="ans bad">✗ Nothing shows</span><span class="exp">lowercase = an HTML tag. Components must start with a <b>capital letter</b>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 3</span><code class="hl">return &lt;h1&gt;Hi&lt;/h1&gt; &lt;p&gt;Text&lt;/p&gt;;</code></span>
+        <span class="face back"><span class="ans bad">✗ SyntaxError</span><span class="exp">One parent only. Wrap them: <code>&lt;&gt;…&lt;/&gt;</code></span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 4</span><code class="hl">{items.map((i) =&gt; &lt;li&gt;{i}&lt;/li&gt;)}</code></span>
+        <span class="face back"><span class="ans bad">⚠ Works, with a warning</span><span class="exp">Missing <code>key</code>. React can't tell the items apart.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 5</span><code class="hl">function Avatar(props) {
+  props.size = 64;
+  …</code></span>
+        <span class="face back"><span class="ans bad">✗ TypeError</span><span class="exp">Props are read-only. Use a default value instead: <code>{ size = 64 }</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 6</span><code class="hl">{cart.length &gt; 0 &amp;&amp; &lt;Badge /&gt;}</code></span>
+        <span class="face back"><span class="ans good">✓ Works</span><span class="exp">A real boolean before <code>&amp;&amp;</code>, so nothing stray is printed.</span></span>
+      </span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART 2 ═══════════════════════════════ -->
+
+<section class="slide divider" id="part-2" data-title="Part 2 · State & events" data-part="2">
+  <div class="wrap">
+    <div class="part-num">02</div>
+    <h1>State &amp; events</h1>
+    <p class="lead">Props come from outside. <b>State</b> is a component's own memory. When state changes, React renders again.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Events" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Events</p><h2>Events: pass a function. Don't call it.</h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step"><code>onClick={handleClick}</code> passes the function. React calls it <b>later</b>, on click.</li>
+        <li class="step"><code>onClick={handleClick()}</code> calls it <b>now, during render</b>, and passes its return value (🐞 tab).</li>
+        <li class="step">Need an argument? Wrap it in an arrow: <code>onClick={() =&gt; greet('Sara')}</code>.</li>
+        <li class="step">Same idea as the <code>this</code> session: <b>handing over a function</b> is not the same as <b>calling</b> it.</li>
+      </ul>
+<script type="text/x-snippet" data-label="✅ Passing functions" data-kind="fix">
+function App() {
+  function handleClick() {
+    console.log('Clicked!');
+  }
+  function greet(name) {
+    console.log(`Hi, ${name}`);
+  }
+  return (
+    <div className="stack">
+      <button onClick={handleClick}>Pass the function</button>
+      <button onClick={() => greet('Sara')}>Arrow, to pass an argument</button>
+      <button onClick={(e) => console.log('event type:', e.type)}>Read the event</button>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 onClick={greet('Sara')}" data-kind="bug">
+function App() {
+  function greet(name) {
+    console.log(`Hi, ${name}`);
+  }
+  return <button onClick={greet('Sara')}>Say hi</button>; // ❌ runs NOW
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Why not a normal variable?" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">State</p><h2>Why can't I just use a normal variable?</h2></div>
+    <div class="runner">
+      <ul class="points r-notes">
+        <li class="step">Click <b>+1</b> on the 🐞 tab. The console counts up, but the screen stays at <b>0</b>.</li>
+        <li class="step">❶ Changing a local variable <b>doesn't tell React</b> to render again.</li>
+        <li class="step">❷ Even if it did render, <code>let count = 0</code> runs again and starts from zero. <b>Local variables don't survive between renders.</b></li>
+        <li class="step"><code>useState</code> solves both: React <b>keeps</b> the value for you, and the setter <b>triggers a render</b>.</li>
+      </ul>
+<script type="text/x-snippet" data-label="🐞 let count" data-kind="bug">
+function App() {
+  let count = 0; // ❌ a normal variable
+
+  function add() {
+    count = count + 1;
+    console.log('count is now', count);
+  }
+
+  return (
+    <div className="row">
+      <span className="big">{count}</span>
+      <button onClick={add}>+1</button>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ useState" data-kind="fix">
+function App() {
+  const [count, setCount] = useState(0); // ✅ state
+
+  function add() {
+    setCount(count + 1);
+  }
+
+  return (
+    <div className="row">
+      <span className="big">{count}</span>
+      <button onClick={add}>+1</button>
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="useState, piece by piece" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Anatomy</p><h2><span class="pill">useState</span> piece by piece</h2></div>
+    <div class="anatomy">
+      <div class="anatomy-code">const [<span class="ann a1">count</span>, <span class="ann a2">setCount</span>] = <span class="tk-hook">useState</span>(<span class="ann a3">0</span>);</div>
+      <div class="ann-labels">
+        <div class="card ann-label a1 step"><b>count</b><p>The value <b>for this render</b>. Read it, but never assign to it.</p></div>
+        <div class="card ann-label a2 step"><b>setCount</b><p>“Please render again with this new value.” The change shows up <b>on the next render</b>.</p></div>
+        <div class="card ann-label a3 step"><b>0</b><p>The <b>starting value</b>. Used on the first render only, then ignored.</p></div>
+      </div>
+      <p class="rule step">The <code>[a, b]</code> is array destructuring, from the JS sessions. You choose the names: <code>[user, setUser]</code>, <code>[isOpen, setIsOpen]</code>.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Trigger → render → commit" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">How React updates the screen</p><h2>Trigger → Render → Commit</h2></div>
+    <div class="pipeline"></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Rendering = calling your function" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">See it happen</p><h2>“Rendering” just means React <u>calls your function again</u></h2></div>
+    <div class="runner">
+      <ul class="points r-notes">
+        <li class="step">Click <b>+1</b> and watch the console: <code>App()</code> runs <b>again</b>, top to bottom.</li>
+        <li class="step">Each run sees a new value of <code>count</code> and returns new JSX.</li>
+        <li class="step">The dashed boxes are a helper for this course, <code>&lt;RenderBox&gt;</code>. They <b>flash and count</b> every time they render. You'll see them again in Part 5.</li>
+        <li class="step">So code in a component body runs <b>on every render</b>. That's why it must be fast and have no side effects.</li>
+      </ul>
+<script type="text/x-snippet" data-label="Watch the renders">
+function App() {
+  const [count, setCount] = useState(0);
+  console.log('🎨 App() ran, count =', count);
+
+  return (
+    <RenderBox name="App">
+      <p>Count: <b>{count}</b></p>
+      <button onClick={() => setCount(count + 1)}>+1</button>
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="State is a snapshot" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">The most surprising rule</p><h2>State is a <u>snapshot</u>: it doesn't change while your code runs</h2></div>
+    <div class="queue-demo"></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Snapshot: try it" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Try it</p><h2>“+3” adds 1, and the log shows the old value</h2></div>
+    <div class="runner">
+      <ul class="points r-notes">
+        <li class="step">Inside one render, <code>count</code> is a <b>constant</b>. It was 0 when the click happened, so every line says “set it to 0 + 1”.</li>
+        <li class="step"><code>console.log(count)</code> right after <code>setCount</code> shows the <b>old</b> value. The new value only exists in the <b>next</b> render.</li>
+        <li class="step">When the new state depends on the old one, pass an <b>updater function</b>: <code>setCount(c =&gt; c + 1)</code>.</li>
+      </ul>
+<script type="text/x-snippet" data-label="🐞 count + 1 ×3" data-kind="bug">
+function App() {
+  const [count, setCount] = useState(0);
+
+  function addThree() {
+    setCount(count + 1);
+    setCount(count + 1);
+    setCount(count + 1);
+    console.log('right after setCount, count is', count);
+  }
+
+  return (
+    <div className="row">
+      <span className="big">{count}</span>
+      <button onClick={addThree}>+3 ?</button>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ c => c + 1 ×3" data-kind="fix">
+function App() {
+  const [count, setCount] = useState(0);
+
+  function addThree() {
+    setCount((c) => c + 1); // ✅ "take the latest, add 1"
+    setCount((c) => c + 1);
+    setCount((c) => c + 1);
+  }
+
+  return (
+    <div className="row">
+      <span className="big">{count}</span>
+      <button onClick={addThree}>+3</button>
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Same box or new box?" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Objects & arrays in state</p><h2>Why you must never <u>change</u> state: make a new copy</h2></div>
+    <div class="box-demo"></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Immutable updates" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Recipes</p><h2>Add, update, remove without mutating anything</h2></div>
+    <div class="runner">
+      <div class="table-wrap r-notes">
+        <table>
+          <thead><tr><th>To…</th><th>Write</th></tr></thead>
+          <tbody>
+            <tr class="step"><td>Add</td><td><code>[...list, item]</code></td></tr>
+            <tr class="step"><td>Remove</td><td><code>list.filter(x =&gt; x.id !== id)</code></td></tr>
+            <tr class="step"><td>Update one</td><td><code>list.map(x =&gt; x.id === id ? {...x, done: true} : x)</code></td></tr>
+            <tr class="step"><td>Object field</td><td><code>{...user, name: 'Omar'}</code></td></tr>
+            <tr class="step"><td>✗ Never</td><td><code>push</code>, <code>splice</code>, <code>sort()</code> in place, <code>obj.x = …</code></td></tr>
+          </tbody>
+        </table>
+      </div>
+<script type="text/x-snippet" data-label="Todo list">
+function App() {
+  const [todos, setTodos] = useState([
+    { id: 1, text: 'Learn state', done: false },
+    { id: 2, text: 'Learn effects', done: false },
+  ]);
+  const [text, setText] = useState('');
+
+  function add() {
+    setTodos([...todos, { id: Date.now(), text, done: false }]);
+    setText('');
+  }
+  function toggle(id) {
+    setTodos(todos.map((t) => (t.id === id ? { ...t, done: !t.done } : t)));
+  }
+  function remove(id) {
+    setTodos(todos.filter((t) => t.id !== id));
+  }
+
+  return (
+    <div className="stack">
+      <div className="row">
+        <input value={text} onChange={(e) => setText(e.target.value)} placeholder="New todo" />
+        <button className="primary" onClick={add} disabled={!text}>Add</button>
+      </div>
+      {todos.map((t) => (
+        <div key={t.id} className="row">
+          <input type="checkbox" checked={t.done} onChange={() => toggle(t.id)} />
+          <span className={t.done ? 'done' : ''}>{t.text}</span>
+          <button onClick={() => remove(t.id)}>✕</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Events flow up" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Lifting state up</p><h2>Data down, events up</h2></div>
+    <div class="tree-demo" data-tree="todo" data-scenes="props|event"></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Lifting state up" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Lifting state up</p><h2>Two components need the same state? Move it to their <u>parent</u>.</h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step">🐞 tab: each panel has <b>its own</b> <code>isOpen</code>, so both can be open at once.</li>
+        <li class="step">✅ tab: the parent owns <b>one</b> <code>openIndex</code> and passes <code>isOpen</code> down as a prop…</li>
+        <li class="step">…plus a function, <code>onShow</code>, that a child calls to <b>ask</b> the parent to change it.</li>
+        <li class="step">One source of truth. The children are “controlled” by their parent.</li>
+      </ul>
+<script type="text/x-snippet" data-label="🐞 State in each panel" data-kind="bug">
+function Panel({ title, children }) {
+  const [isOpen, setIsOpen] = useState(false); // each one decides alone
+  return (
+    <div className="card">
+      <b>{title}</b>{' '}
+      {isOpen ? <p>{children}</p> : <button onClick={() => setIsOpen(true)}>Show</button>}
+    </div>
+  );
+}
+
+function App() {
+  return (
+    <>
+      <Panel title="About">React is a library for building UIs.</Panel>
+      <Panel title="Hooks">Hooks let components remember things.</Panel>
+    </>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ State lifted to App" data-kind="fix">
+function Panel({ title, isOpen, onShow, children }) {
+  return (
+    <div className="card">
+      <b>{title}</b>{' '}
+      {isOpen ? <p>{children}</p> : <button onClick={onShow}>Show</button>}
+    </div>
+  );
+}
+
+function App() {
+  const [openIndex, setOpenIndex] = useState(0); // ✅ one owner
+  return (
+    <>
+      <Panel title="About" isOpen={openIndex === 0} onShow={() => setOpenIndex(0)}>
+        React is a library for building UIs.
+      </Panel>
+      <Panel title="Hooks" isOpen={openIndex === 1} onShow={() => setOpenIndex(1)}>
+        Hooks let components remember things.
+      </Panel>
+    </>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Forms: controlled inputs" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Forms</p><h2>Controlled inputs: state is the single source of truth</h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step"><code>value={name}</code>: the input <b>shows the state</b>.</li>
+        <li class="step"><code>onChange</code>: every keystroke <b>updates the state</b>, then React renders the new value.</li>
+        <li class="step">Checkboxes use <code>checked</code> and <code>e.target.checked</code>.</li>
+        <li class="step">Because the values live in state, you can show them, validate them, or disable the button as the user types.</li>
+        <li class="step">On submit, <code>e.preventDefault()</code> stops the browser from reloading the page. Forgetting it is Bug 13.</li>
+      </ul>
+<script type="text/x-snippet" data-label="Signup form">
+function App() {
+  const [name, setName] = useState('');
+  const [level, setLevel] = useState('beginner');
+  const [agree, setAgree] = useState(false);
+
+  function handleSubmit(e) {
+    e.preventDefault(); // ✅ no page reload
+    console.log('submitted', { name, level, agree });
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="stack">
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Your name" />
+      <select value={level} onChange={(e) => setLevel(e.target.value)}>
+        <option value="beginner">Beginner</option>
+        <option value="pro">Pro</option>
+      </select>
+      <label>
+        <input type="checkbox" checked={agree} onChange={(e) => setAgree(e.target.checked)} />
+        I agree
+      </label>
+      <p>Hello <b>{name || '…'}</b> ({level})</p>
+      <button className="primary" disabled={!name || !agree}>Send</button>
+    </form>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Quiz: state" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Quiz · click to flip</p><h2>What happens?</h2></div>
+    <div class="flips">
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 1</span><code class="hl">let likes = 0;
+&lt;button onClick={() =&gt; likes++}&gt;</code></span>
+        <span class="face back"><span class="ans bad">Screen never changes</span><span class="exp">A normal variable doesn't trigger a render, and it resets on each render.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 2</span><code class="hl">&lt;button onClick={save()}&gt;</code></span>
+        <span class="face back"><span class="ans bad">Runs during render</span><span class="exp"><code>save</code> runs on every render, and clicking does nothing. Use <code>onClick={save}</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 3 · count is 0</span><code class="hl">setCount(count + 1);
+setCount(count + 1);</code></span>
+        <span class="face back"><span class="ans bad">count = 1</span><span class="exp"><code>count</code> is 0 on both lines (a snapshot). Use <code>c =&gt; c + 1</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 4</span><code class="hl">todos.push(newTodo);
+setTodos(todos);</code></span>
+        <span class="face back"><span class="ans bad">No re-render</span><span class="exp">Same array, so React sees no change. Use <code>[...todos, newTodo]</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 5</span><code class="hl">setUser({ ...user, name: 'Omar' });</code></span>
+        <span class="face back"><span class="ans good">✓ Correct</span><span class="exp">A new object with one field changed.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 6</span><code class="hl">setCount(5);
+console.log(count);</code></span>
+        <span class="face back"><span class="ans bad">Logs the OLD value</span><span class="exp">The new value arrives in the next render.</span></span>
+      </span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART 3 ═══════════════════════════════ -->
+
+<section class="slide divider" id="part-3" data-title="Part 3 · Effects & refs" data-part="3">
+  <div class="wrap">
+    <div class="part-num">03</div>
+    <h1>Effects &amp; refs</h1>
+    <p class="lead">Rendering must be <b>pure</b>. Anything that reaches outside React (timers, network, the document) goes in an <b>effect</b>.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Pure render, side effects" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Two kinds of code</p><h2>Rendering is a recipe. Effects are deliveries.</h2></div>
+    <div class="cols">
+      <div class="card">
+        <h3>🎨 Render: must be <b>pure</b></h3>
+        <p>Same props + state → same JSX. Every time. No surprises.</p>
+        <ul class="points tight">
+          <li>Calculate, filter, format, return JSX ✅</li>
+          <li>No <code>fetch</code>, no timers, no <code>document.title = …</code> ❌</li>
+          <li>No changing variables outside the component ❌</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3>⚡ Side effects: talk to the outside world</h3>
+        <ul class="points tight">
+          <li><b>In event handlers</b>, when caused by a user action: <code>onClick={save}</code>. This is the best place for most of them.</li>
+          <li><b>In <code>useEffect</code></b>, when caused by being <b>on screen</b>: connect to a chat, start a timer, sync with a non-React widget, fetch data for what's shown.</li>
+        </ul>
+      </div>
+    </div>
+    <p class="rule step">Ask: <i>“Does this happen because the user <b>did</b> something, or because the component is <b>showing</b>?”</i> Did something → event handler. Showing → effect.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="useEffect, piece by piece" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Anatomy</p><h2><span class="pill">useEffect</span> piece by piece</h2></div>
+    <div class="anatomy">
+      <div class="anatomy-code"><span class="tk-hook">useEffect</span>(<span class="ann a1">() =&gt; {
+  const conn = connect(roomId);</span>
+  <span class="ann a2">return () =&gt; conn.disconnect();</span>
+}, <span class="ann a3">[roomId]</span>);</div>
+      <div class="ann-labels">
+        <div class="card ann-label a1 step"><b>Effect</b><p>Runs <b>after</b> React has updated the screen. Never during render.</p></div>
+        <div class="card ann-label a2 step"><b>Cleanup</b> <span class="muted">(optional)</span><p>Undoes the effect. Runs <b>before the next effect</b> and when the component is <b>removed</b>.</p></div>
+        <div class="card ann-label a3 step"><b>Dependencies</b><p>When to run again. <code>[roomId]</code> means whenever roomId changed. <code>[]</code> means only once. No array means after every render.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Effect timeline (live)" data-part="3">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Live: a real component reports what React does</p>
+      <h2>When do effects and cleanups run?</h2>
+      <p class="lead">Try each dependency setting. Press the buttons and read the log on the right.</p>
+    </div>
+    <div class="effect-demo"></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Cleanup: a clock" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Cleanup</p><h2>Start something in an effect? Stop it in the cleanup.</h2></div>
+    <div class="runner">
+      <ul class="points r-notes">
+        <li class="step">The clock starts a timer when it <b>appears</b>.</li>
+        <li class="step">Click <b>Hide clock</b>: React runs the cleanup, and the timer stops (🧹 in the console).</li>
+        <li class="step">Without the cleanup, the timer keeps running forever, even with no clock on screen. That's Bug 5.</li>
+        <li class="step">Every subscription has an opposite: <code>addEventListener</code> / <code>remove…</code>, <code>setInterval</code> / <code>clearInterval</code>, <code>connect</code> / <code>disconnect</code>.</li>
+      </ul>
+<script type="text/x-snippet" data-label="Clock">
+function Clock() {
+  const [time, setTime] = useState(new Date());
+
+  useEffect(() => {
+    console.log('⚡ start timer');
+    const id = setInterval(() => setTime(new Date()), 1000);
+    return () => {
+      console.log('🧹 stop timer');
+      clearInterval(id);
+    };
+  }, []);
+
+  return <p className="big">{time.toLocaleTimeString()}</p>;
+}
+
+function App() {
+  const [show, setShow] = useState(true);
+  return (
+    <>
+      <button onClick={() => setShow(!show)}>{show ? 'Hide' : 'Show'} clock</button>
+      {show && <Clock />}
+    </>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="StrictMode runs effects twice" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">“Why does my effect run twice?!”</p><h2>StrictMode mounts → unmounts → mounts again, on purpose</h2></div>
+    <div class="runner" data-strict>
+      <ul class="points r-notes">
+        <li class="step">This example runs inside <code>&lt;StrictMode&gt;</code>, like a new Vite or Next.js app.</li>
+        <li class="step">In <b>development only</b>, React runs every effect, its cleanup, then the effect again. Look at the first 3 console lines.</li>
+        <li class="step">Why? If your cleanup is right, the user can't tell the difference. If it's missing, you'll see <b>two</b> connections. It's a bug detector.</li>
+        <li class="step"><b>Don't</b> “fix” it by removing StrictMode or adding a flag. Fix the cleanup.</li>
+      </ul>
+<script type="text/x-snippet" data-label="Chat room">
+function ChatRoom({ room }) {
+  useEffect(() => {
+    console.log(`🔌 connect to #${room}`);
+    return () => console.log(`🔕 disconnect from #${room}`);
+  }, [room]);
+
+  return <p>Welcome to <b>#{room}</b></p>;
+}
+
+function App() {
+  const [room, setRoom] = useState('general');
+  return (
+    <>
+      <select value={room} onChange={(e) => setRoom(e.target.value)}>
+        <option>general</option>
+        <option>random</option>
+      </select>
+      <ChatRoom room={room} />
+    </>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Fetching data" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Data fetching</p><h2>Fetching: loading, error, data, and ignoring stale answers</h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step">Three states to handle: <b>loading</b>, <b>error</b>, <b>data</b>. Users will see all three.</li>
+        <li class="step">The effect depends on <code>[userId]</code>, so it fetches again whenever the user changes.</li>
+        <li class="step">The <code>ignore</code> flag: if the user switches before the answer arrives, the cleanup marks the old request as <b>stale</b> (Bug 12 shows why).</li>
+        <li class="step">Try <b>User 4</b> for the error state. <code>fakeApi</code> is a pretend server with a delay, built into this deck.</li>
+        <li class="step">In real projects: <code>fetch()</code> works the same way, but most teams use <b>TanStack Query</b> or their framework's data loading.</li>
+      </ul>
+<script type="text/x-snippet" data-label="User card">
+function UserCard({ userId }) {
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    let ignore = false;
+    setUser(null);
+    setError(null);
+    fakeApi.getUser(userId)
+      .then((data) => { if (!ignore) setUser(data); })
+      .catch((err) => { if (!ignore) setError(err.message); });
+    return () => { ignore = true; };
+  }, [userId]);
+
+  if (error) return <p className="error">⚠ {error}</p>;
+  if (!user) return <p className="muted">Loading…</p>;
+  return <div className="card"><b>{user.name}</b> · {user.role} · {user.city}</div>;
+}
+
+function App() {
+  const [userId, setUserId] = useState(1);
+  return (
+    <>
+      {[1, 2, 3, 4].map((id) => (
+        <button key={id} onClick={() => setUserId(id)}>User {id}</button>
+      ))}
+      <UserCard userId={userId} />
+    </>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="useRef" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Refs</p><h2><span class="pill">useRef</span>: a box React keeps for you, but never watches</h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step"><code>const ref = useRef(start)</code> gives you <code>{ current: start }</code>. It is the same object on every render.</li>
+        <li class="step"><b>Use 1: DOM elements.</b> <code>&lt;input ref={inputRef} /&gt;</code>, then <code>inputRef.current.focus()</code>.</li>
+        <li class="step"><b>Use 2: values that must survive renders but don't affect the screen</b>: interval ids, previous values.</li>
+        <li class="step">Changing <code>ref.current</code> <b>does not re-render</b>. If it should show on screen, it's state, not a ref (tab 2).</li>
+        <li class="step">Don't read or write refs <b>during render</b>. Use them in handlers and effects.</li>
+      </ul>
+<script type="text/x-snippet" data-label="Focus an input">
+function App() {
+  const inputRef = useRef(null);
+  return (
+    <div className="row">
+      <input ref={inputRef} placeholder="Type here…" />
+      <button onClick={() => inputRef.current.focus()}>Focus the input</button>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="Ref vs state">
+function App() {
+  const [stateClicks, setStateClicks] = useState(0);
+  const refClicks = useRef(0);
+  console.log('🎨 render');
+
+  return (
+    <div className="stack">
+      <button onClick={() => setStateClicks(stateClicks + 1)}>
+        state: {stateClicks}
+      </button>
+      <button onClick={() => { refClicks.current++; console.log('ref is now', refClicks.current); }}>
+        ref: {refClicks.current}
+      </button>
+      <p className="muted">The ref button counts, but the screen only catches up on the next render.</p>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="Stopwatch">
+function App() {
+  const [ms, setMs] = useState(0);
+  const timerRef = useRef(null); // the interval id survives renders
+
+  function start() {
+    if (timerRef.current) return;
+    timerRef.current = setInterval(() => setMs((m) => m + 100), 100);
+  }
+  function stop() {
+    clearInterval(timerRef.current);
+    timerRef.current = null;
+  }
+
+  return (
+    <div className="row">
+      <span className="big">{(ms / 1000).toFixed(1)}s</span>
+      <button onClick={start}>Start</button>
+      <button onClick={stop}>Stop</button>
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="You might not need an effect" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">The most common over-use</p><h2>You might not need an effect</h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step">Can you <b>calculate it</b> from props or state? Then do it during render. No state, no effect.</li>
+        <li class="step">Look at the console on the 🐞 tab: <b>two renders per keystroke</b>, and the first one shows stale results.</li>
+        <li class="step">Logic caused by a <b>click</b>? Put it in the click handler, not in an effect that “watches” state.</li>
+        <li class="step">Expensive calculation? <code>useMemo</code> (Part 5). Still no effect.</li>
+      </ul>
+<script type="text/x-snippet" data-label="✅ Calculate during render" data-kind="fix">
+const PEOPLE = ['Sara', 'Omar', 'Lina', 'Yousef', 'Mona', 'Karim'];
+
+function App() {
+  const [query, setQuery] = useState('');
+  const results = PEOPLE.filter((p) =>
+    p.toLowerCase().includes(query.toLowerCase())
+  ); // ✅ derived: just compute it
+  console.log('🎨 render', { query, shown: results.length });
+
+  return (
+    <div className="stack">
+      <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search…" />
+      <ul>{results.map((p) => <li key={p}>{p}</li>)}</ul>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 Extra state + effect" data-kind="bug">
+const PEOPLE = ['Sara', 'Omar', 'Lina', 'Yousef', 'Mona', 'Karim'];
+
+function App() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState(PEOPLE); // ❌ a copy we must keep in sync
+  useEffect(() => {
+    setResults(PEOPLE.filter((p) => p.toLowerCase().includes(query.toLowerCase())));
+  }, [query]);
+  console.log('🎨 render', { query, shown: results.length });
+
+  return (
+    <div className="stack">
+      <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search…" />
+      <ul>{results.map((p) => <li key={p}>{p}</li>)}</ul>
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART 4 ═══════════════════════════════ -->
+
+<section class="slide divider" id="part-4" data-title="Part 4 · Sharing state & logic" data-part="4">
+  <div class="wrap">
+    <div class="part-num">04</div>
+    <h1>Sharing state &amp; logic</h1>
+    <p class="lead">Context to skip the middlemen. Reducers for complex updates. Custom hooks to reuse logic. And the two rules every hook follows.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Prop drilling vs context" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">The problem and the fix</p><h2>Prop drilling vs context</h2></div>
+    <div class="tree-demo" data-tree="theme" data-scenes="drill|context"></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Context in code" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Context</p><h2>Context: <span class="pill">createContext</span> → Provider → <span class="pill">useContext</span></h2></div>
+    <div class="runner">
+      <ol class="points tight r-notes">
+        <li class="step"><code>createContext(default)</code>, once, outside components.</li>
+        <li class="step">Wrap a part of the tree in <code>&lt;ThemeContext.Provider value={…}&gt;</code>.</li>
+        <li class="step">Any component inside reads it with <code>useContext(ThemeContext)</code>, however deep.</li>
+        <li class="step">When the value changes, <b>every component that reads it re-renders</b>.</li>
+        <li class="step">Good for: theme, current user, language. Not a replacement for all props: passing props is still the default.</li>
+      </ol>
+<script type="text/x-snippet" data-label="✅ Context" data-kind="fix">
+const ThemeContext = createContext('light');
+
+function ThemeButton() {
+  const theme = useContext(ThemeContext); // ✅ read it directly
+  return <button className={theme}>I am {theme}</button>;
+}
+function Menu() {
+  return <div className="card">Menu: <ThemeButton /></div>;
+}
+function Sidebar() {
+  return <Menu />;
+}
+
+function App() {
+  const [theme, setTheme] = useState('light');
+  return (
+    <ThemeContext.Provider value={theme}>
+      <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>Toggle theme</button>
+      <Sidebar />
+    </ThemeContext.Provider>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="😩 Prop drilling">
+function ThemeButton({ theme }) {
+  return <button className={theme}>I am {theme}</button>;
+}
+function Menu({ theme }) {         // only passes it on
+  return <div className="card">Menu: <ThemeButton theme={theme} /></div>;
+}
+function Sidebar({ theme }) {      // only passes it on
+  return <Menu theme={theme} />;
+}
+
+function App() {
+  const [theme, setTheme] = useState('light');
+  return (
+    <>
+      <button onClick={() => setTheme(theme === 'light' ? 'dark' : 'light')}>Toggle theme</button>
+      <Sidebar theme={theme} />
+    </>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="useReducer" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Complex state</p><h2><span class="pill">useReducer</span>: describe <u>what happened</u>, decide the new state in one place</h2></div>
+    <div class="runner">
+      <ol class="points tight r-notes">
+        <li class="step">Components <b>dispatch actions</b>: <code>dispatch({ type: 'add', item })</code>. They say <i>what happened</i>, not how to update.</li>
+        <li class="step">A <b>reducer</b> is a pure function: <code>(state, action) =&gt; newState</code>. All the update logic lives there.</li>
+        <li class="step">Same immutability rules: return a <b>new</b> array or object.</li>
+        <li class="step">Use it when many handlers update the same state, or the next state depends on several fields. For a simple toggle, <code>useState</code> is fine.</li>
+      </ol>
+<script type="text/x-snippet" data-label="Cart reducer">
+function cartReducer(cart, action) {
+  switch (action.type) {
+    case 'add':
+      return [...cart, { id: Date.now(), name: action.name }];
+    case 'remove':
+      return cart.filter((item) => item.id !== action.id);
+    case 'clear':
+      return [];
+    default:
+      throw new Error('Unknown action: ' + action.type);
+  }
+}
+
+function App() {
+  const [cart, dispatch] = useReducer(cartReducer, []);
+  return (
+    <div className="stack">
+      <div className="row">
+        <button onClick={() => dispatch({ type: 'add', name: '☕ Coffee' })}>+ Coffee</button>
+        <button onClick={() => dispatch({ type: 'add', name: '🥐 Croissant' })}>+ Croissant</button>
+        <button onClick={() => dispatch({ type: 'clear' })}>Clear</button>
+      </div>
+      {cart.map((item) => (
+        <div key={item.id} className="row">
+          {item.name}
+          <button onClick={() => dispatch({ type: 'remove', id: item.id })}>✕</button>
+        </div>
+      ))}
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Custom hooks" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Reusing logic</p><h2>Custom hooks: your own <span class="pill">useSomething</span></h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step">A custom hook is a function whose name starts with <code>use</code> and that <b>calls other hooks</b>.</li>
+        <li class="step">It shares <b>logic</b>, not state: every component that calls <code>useToggle()</code> gets its <b>own</b> state.</li>
+        <li class="step">Resize the browser window and watch <code>useWindowWidth</code> update.</li>
+        <li class="step">Real-world examples: <code>useLocalStorage</code>, <code>useDebounce</code>, <code>useOnlineStatus</code>, <code>useFetch</code>.</li>
+      </ul>
+<script type="text/x-snippet" data-label="useWindowWidth + useToggle">
+function useWindowWidth() {
+  const [width, setWidth] = useState(window.innerWidth);
+  useEffect(() => {
+    const onResize = () => setWidth(window.innerWidth);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
+  return width;
+}
+
+function useToggle(initial = false) {
+  const [on, setOn] = useState(initial);
+  const toggle = () => setOn((v) => !v);
+  return [on, toggle];
+}
+
+function App() {
+  const width = useWindowWidth();
+  const [open, toggleOpen] = useToggle();
+  return (
+    <div className="stack">
+      <p>Window: <b>{width}px</b> {width < 900 ? '📱' : '🖥️'}</p>
+      <button onClick={toggleOpen}>{open ? 'Close' : 'Open'} details</button>
+      {open && <p className="card">Each caller gets its <b>own</b> state.</p>}
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Rules of hooks" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Two rules</p><h2>The rules of hooks, and <u>why</u> they exist</h2></div>
+    <div class="cols">
+      <div style="display:flex;flex-direction:column;gap:.7rem">
+        <div class="rule step"><b>1.</b> Only call hooks <b>at the top level</b> of a component. Never inside <code>if</code>, loops, nested functions, or after an early <code>return</code>.</div>
+        <div class="rule step"><b>2.</b> Only call hooks from <b>components</b> or <b>custom hooks</b> (functions named <code>useSomething</code>).</div>
+        <p class="step">Why? React doesn't know your variable names. It remembers hooks <b>by call order</b>: “1st hook, 2nd hook, 3rd hook…”. Skip one, and every hook after it gets the <b>wrong state</b>.</p>
+        <p class="muted step">The ESLint plugin <code>eslint-plugin-react-hooks</code> catches this in your editor. Bug 11 shows the crash.</p>
+      </div>
+      <div class="table-wrap step">
+        <table>
+          <thead><tr><th>Call #</th><th>Render 1 (showBio = false)</th><th>Render 2 (showBio = true)</th></tr></thead>
+          <tbody>
+            <tr><td>1</td><td><code>useState('Sara')</code> → name</td><td><code>useState('Sara')</code> → name ✓</td></tr>
+            <tr><td>2</td><td><code>useState(0)</code> → likes</td><td style="color:var(--bug)"><code>useState('bio')</code> ← gets <b>likes'</b> slot ✗</td></tr>
+            <tr><td>3</td><td>(none)</td><td style="color:var(--bug)"><code>useState(0)</code> ← a new slot? 💥</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART 5 ═══════════════════════════════ -->
+
+<section class="slide divider" id="part-5" data-title="Part 5 · Rendering & performance" data-part="5">
+  <div class="wrap">
+    <div class="part-num">05</div>
+    <h1>Rendering &amp; performance</h1>
+    <p class="lead">When does React re-render, when should you care, and the tools to skip work: <code>memo</code>, <code>useMemo</code>, <code>useCallback</code>.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="When does a component re-render?" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Re-renders</p><h2>A component re-renders when…</h2></div>
+    <div class="cols cols-40">
+      <ol class="points">
+        <li class="step"><b>Its own state</b> changes.</li>
+        <li class="step"><b>Its parent re-renders.</b> All children render too, whether or not their props changed.</li>
+        <li class="step">A <b>context</b> it reads changes.</li>
+        <li class="step">Myth: “it re-renders <i>because its props changed</i>”. Props change <i>because</i> the parent rendered, and that is the real reason.</li>
+        <li class="step">Re-rendering is <b>not</b> slow by default. React only touches the DOM where the output changed.</li>
+      </ol>
+      <div class="tree-demo" data-tree="todo" data-scenes="rerender|memo"></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="See re-renders live" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Live</p><h2>Click each button and watch which boxes flash</h2></div>
+    <div class="runner">
+      <ul class="points r-notes">
+        <li class="step">Click <b>App state</b>: App, Header <b>and</b> Counter all render. Header has no props at all!</li>
+        <li class="step">Click <b>Counter's own state</b>: only Counter renders. State changes go <b>down</b> the tree, never up.</li>
+        <li class="step">Tip: React DevTools → ⚙ → “Highlight updates when components render” shows the same in real apps.</li>
+      </ul>
+<script type="text/x-snippet" data-label="Render boxes">
+function Header() {
+  return <RenderBox name="Header"><p>I take no props</p></RenderBox>;
+}
+
+function Counter() {
+  const [n, setN] = useState(0);
+  return (
+    <RenderBox name="Counter">
+      <button onClick={() => setN(n + 1)}>Counter's own state: {n}</button>
+    </RenderBox>
+  );
+}
+
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setCount(count + 1)}>App state: {count}</button>
+      <Header />
+      <Counter />
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="memo, useMemo, useCallback" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Skipping renders</p><h2><code>memo</code> skips a child, if its props are <u>the same</u></h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step"><code>memo(Component)</code> compares each prop with <code>Object.is</code>. All the same → skip.</li>
+        <li class="step">🐞 <code>style={{ … }}</code> or <code>onSelect={() =&gt; …}</code> written inline makes a <b>new object or function every render</b>, so they are never “the same” and memo is useless.</li>
+        <li class="step">✅ <code>useMemo(() =&gt; value, deps)</code> and <code>useCallback(fn, deps)</code> give back the <b>same</b> object or function until a dependency changes.</li>
+        <li class="step">Same “same box or new box” idea as state (Part 2).</li>
+      </ul>
+<script type="text/x-snippet" data-label="✅ memo works" data-kind="fix">
+const Header = memo(function Header({ title }) {
+  return <RenderBox name="Header (memo)"><b>{title}</b></RenderBox>;
+});
+
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setCount(count + 1)}>App state: {count}</button>
+      <Header title="My shop" />
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 new object & function" data-kind="bug">
+const Header = memo(function Header({ title, style, onSelect }) {
+  return <RenderBox name="Header (memo)"><b style={style} onClick={onSelect}>{title}</b></RenderBox>;
+});
+
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setCount(count + 1)}>App state: {count}</button>
+      <Header
+        title="My shop"
+        style={{ color: 'tomato' }}               // ❌ new object every render
+        onSelect={() => console.log('selected')}  // ❌ new function every render
+      />
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ useMemo + useCallback" data-kind="fix">
+const Header = memo(function Header({ title, style, onSelect }) {
+  return <RenderBox name="Header (memo)"><b style={style} onClick={onSelect}>{title}</b></RenderBox>;
+});
+
+function App() {
+  const [count, setCount] = useState(0);
+  const style = useMemo(() => ({ color: 'tomato' }), []);              // ✅ same object
+  const onSelect = useCallback(() => console.log('selected'), []);    // ✅ same function
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setCount(count + 1)}>App state: {count}</button>
+      <Header title="My shop" style={style} onSelect={onSelect} />
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="useMemo for slow work" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Expensive calculations</p><h2><span class="pill">useMemo</span>: don't redo slow work on every keystroke</h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step">🐞 tab: type fast in the box. It <b>lags</b>, because <code>slowSquare</code> (150 ms) runs on <b>every</b> render, even though <code>n</code> didn't change.</li>
+        <li class="step">✅ tab: <code>useMemo(() =&gt; slowSquare(n), [n])</code> only recalculates when <code>n</code> changes.</li>
+        <li class="step"><b>Measure first.</b> Most components never need this. Optimizing too early makes code harder to read.</li>
+        <li class="step">The <b>React Compiler</b> (React 19 era) adds this kind of memoization automatically.</li>
+      </ul>
+<script type="text/x-snippet" data-label="🐞 Slow every render" data-kind="bug">
+function slowSquare(n) {
+  const end = performance.now() + 150; // pretend this is heavy work
+  while (performance.now() < end) {}
+  return n * n;
+}
+
+function App() {
+  const [n, setN] = useState(4);
+  const [text, setText] = useState('');
+  const squared = slowSquare(n); // ❌ runs even when you only type
+
+  return (
+    <div className="stack">
+      <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type fast here…" />
+      <div className="row">
+        <button onClick={() => setN(n + 1)}>n = {n}</button> n² = <b>{squared}</b>
+      </div>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ useMemo" data-kind="fix">
+function slowSquare(n) {
+  const end = performance.now() + 150; // pretend this is heavy work
+  while (performance.now() < end) {}
+  return n * n;
+}
+
+function App() {
+  const [n, setN] = useState(4);
+  const [text, setText] = useState('');
+  const squared = useMemo(() => slowSquare(n), [n]); // ✅ only when n changes
+
+  return (
+    <div className="stack">
+      <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type fast here…" />
+      <div className="row">
+        <button onClick={() => setN(n + 1)}>n = {n}</button> n² = <b>{squared}</b>
+      </div>
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="State lives in the tree (key)" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Identity</p><h2>State belongs to a <u>position</u> in the tree. <code>key</code> changes the identity.</h2></div>
+    <div class="runner">
+      <ul class="points tight r-notes">
+        <li class="step">🐞 tab: type a note for Sara, then click <b>Omar</b>. The note is still there!</li>
+        <li class="step">Same component, <b>same position</b>, so React keeps its state. Only the props changed.</li>
+        <li class="step">✅ <code>&lt;Notes key={person} /&gt;</code>: a different key means a <b>different component</b>. React throws the old one away, along with its state.</li>
+        <li class="step">That's also why keys in lists matter (Bug 7), and why you never define a component inside another one (Bug 8).</li>
+      </ul>
+<script type="text/x-snippet" data-label="🐞 State sticks" data-kind="bug">
+function Notes({ person }) {
+  const [note, setNote] = useState('');
+  return (
+    <div className="card stack">
+      <b>Private note for {person}</b>
+      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={`Note for ${person}`} />
+    </div>
+  );
+}
+
+function App() {
+  const [person, setPerson] = useState('Sara');
+  return (
+    <>
+      {['Sara', 'Omar'].map((p) => (
+        <button key={p} onClick={() => setPerson(p)}>{p}</button>
+      ))}
+      <Notes person={person} />
+    </>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ key={person}" data-kind="fix">
+function Notes({ person }) {
+  const [note, setNote] = useState('');
+  return (
+    <div className="card stack">
+      <b>Private note for {person}</b>
+      <input value={note} onChange={(e) => setNote(e.target.value)} placeholder={`Note for ${person}`} />
+    </div>
+  );
+}
+
+function App() {
+  const [person, setPerson] = useState('Sara');
+  return (
+    <>
+      {['Sara', 'Omar'].map((p) => (
+        <button key={p} onClick={() => setPerson(p)}>{p}</button>
+      ))}
+      <Notes key={person} person={person} />
+    </>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="What's next" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Beyond the core</p><h2>What's next after the core</h2></div>
+    <div class="grid-3">
+      <div class="card step"><h3>⚛️ React 19</h3><p><b>Actions</b> and <code>useActionState</code> for forms, <code>useOptimistic</code>, <code>use()</code> to read promises and context, <code>ref</code> as a normal prop, and the <b>React Compiler</b> for automatic memoization.</p></div>
+      <div class="card step"><h3>🧭 Frameworks</h3><p><b>Next.js</b>, <b>React Router</b> (framework mode): routing, data loading, Server Components. This is how most new React apps start.</p></div>
+      <div class="card step"><h3>📡 Server data</h3><p><b>TanStack Query</b> handles caching, loading and error states, retries and race conditions for you. No more hand-written fetch effects.</p></div>
+      <div class="card step"><h3>🎨 Styling</h3><p>CSS Modules, Tailwind CSS, or a component library (shadcn/ui, MUI).</p></div>
+      <div class="card step"><h3>🧪 Testing</h3><p>Vitest + React Testing Library: test what the <b>user</b> sees and does, not the internals.</p></div>
+      <div class="card step"><h3>🛠 Tools</h3><p>React DevTools, <code>eslint-plugin-react-hooks</code>, TypeScript for props.</p></div>
+    </div>
+    <p class="muted step">This deck runs React 18.3, because React 19 has no single-file browser build. Everything in it works the same in React 19.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART 6 — BUGS ═══════════════════════════════ -->
+
+<section class="slide divider compact" id="part-6" data-title="Part 6 · The bugs" data-part="6">
+  <div class="wrap">
+    <div class="part-num">06</div>
+    <h1>The bugs you get without the “why”</h1>
+    <p class="lead">For each one: read the code, guess what happens, run it, then press <kbd>→</kbd> to show the explanation.</p>
+    <ol class="bug-index">
+      <li><a href="#" data-goto="#bug-1"><span class="n">01</span>The list that won't update (mutation)</a></li>
+      <li><a href="#" data-goto="#bug-2"><span class="n">02</span>Too many re-renders</a></li>
+      <li><a href="#" data-goto="#bug-3"><span class="n">03</span>Three likes, one counted</a></li>
+      <li><a href="#" data-goto="#bug-4"><span class="n">04</span>The timer stuck at 1</a></li>
+      <li><a href="#" data-goto="#bug-5"><span class="n">05</span>The ghost timer (no cleanup)</a></li>
+      <li><a href="#" data-goto="#bug-6"><span class="n">06</span>The endless fetch loop</a></li>
+      <li><a href="#" data-goto="#bug-7"><span class="n">07</span>Notes on the wrong person (index key)</a></li>
+      <li><a href="#" data-goto="#bug-8"><span class="n">08</span>The input that loses focus</a></li>
+      <li><a href="#" data-goto="#bug-9"><span class="n">09</span>The mysterious 0</a></li>
+      <li><a href="#" data-goto="#bug-10"><span class="n">10</span>Props copied into state</a></li>
+      <li><a href="#" data-goto="#bug-11"><span class="n">11</span>A hook inside an if</a></li>
+      <li><a href="#" data-goto="#bug-12"><span class="n">12</span>Search shows the wrong results (race)</a></li>
+      <li><a href="#" data-goto="#bug-13"><span class="n">13</span>The form that resets everything</a></li>
+      <li><a href="#" data-goto="#bug-14"><span class="n">14</span>Uncontrolled → controlled</a></li>
+    </ol>
+  </div>
+</section>
+
+<!-- BUG 1 -->
+<section class="slide bug" id="bug-1" data-title="Bug 1 · Mutating state" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 01</span><h2>The list that won't update</h2>
+      <p class="symptom">Click <b>Add eggs</b>. The console says the array grew. The screen doesn't change.</p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 push" data-kind="bug">
+function App() {
+  const [items, setItems] = useState(['Milk', 'Bread']);
+
+  function add() {
+    items.push('Eggs ' + items.length); // ❌ changes the SAME array
+    setItems(items);
+    console.log('items is now', items);
+  }
+
+  return (
+    <div className="stack">
+      <button onClick={add}>Add eggs</button>
+      <ul>{items.map((it) => <li key={it}>{it}</li>)}</ul>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ new array" data-kind="fix">
+function App() {
+  const [items, setItems] = useState(['Milk', 'Bread']);
+
+  function add() {
+    setItems([...items, 'Eggs ' + items.length]); // ✅ a NEW array
+  }
+
+  return (
+    <div className="stack">
+      <button onClick={add}>Add eggs</button>
+      <ul>{items.map((it) => <li key={it}>{it}</li>)}</ul>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 object" data-kind="bug">
+function App() {
+  const [post, setPost] = useState({ title: 'Hello React', likes: 0 });
+
+  function like() {
+    post.likes++;  // ❌ changes the SAME object
+    setPost(post);
+  }
+
+  return <button onClick={like}>❤️ {post.likes} · {post.title}</button>;
+}
+</script>
+<script type="text/x-snippet" data-label="✅ new object" data-kind="fix">
+function App() {
+  const [post, setPost] = useState({ title: 'Hello React', likes: 0 });
+
+  function like() {
+    setPost({ ...post, likes: post.likes + 1 }); // ✅ a NEW object
+  }
+
+  return <button onClick={like}>❤️ {post.likes} · {post.title}</button>;
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step"><code>push</code> and <code>post.likes++</code> change the object that is <b>already in state</b>.</li>
+          <li class="step"><code>setItems(items)</code> passes React the <b>same box</b>. <code>Object.is(old, new)</code> is <code>true</code>.</li>
+          <li class="step">React decides nothing changed and <b>skips the render</b>. Your data and your screen are now out of sync.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> treat state as read-only. Make a new copy with <code>...</code>, <code>map</code>, <code>filter</code>.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 2 -->
+<section class="slide bug" id="bug-2" data-title="Bug 2 · Too many re-renders" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 02</span><h2>Too many re-renders</h2>
+      <p class="symptom">The app crashes before you click anything: <code>Too many re-renders. React limits the number of renders to prevent an infinite loop.</code></p></div>
+    <div class="runner" data-notes="after" data-autorun="false">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <button onClick={setCount(count + 1)}> {/* ❌ */}
+      Clicked {count} times
+    </button>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Pass a function" data-kind="fix">
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <button onClick={() => setCount(count + 1)}> {/* ✅ */}
+      Clicked {count} times
+    </button>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step"><code>onClick={setCount(count + 1)}</code> <b>calls</b> <code>setCount</code> right now, while rendering.</li>
+          <li class="step">Setting state <b>triggers a render</b>… which calls <code>setCount</code> again… which triggers a render…</li>
+          <li class="step">React stops it after about 50 rounds and throws.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> <code>onClick</code> wants a function. Give it <code>() =&gt; setCount(count + 1)</code>. Never call setState directly in the component body.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 3 -->
+<section class="slide bug" id="bug-3" data-title="Bug 3 · Stale snapshot" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 03</span><h2>Three likes, one counted</h2>
+      <p class="symptom">Click <b>Like</b> 3 times quickly. 1.5 s later you get ❤️ 1, not 3.</p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function App() {
+  const [likes, setLikes] = useState(0);
+
+  function likeLater() {
+    setTimeout(() => {
+      setLikes(likes + 1); // ❌ likes from the render where you clicked
+    }, 1500);
+  }
+
+  return (
+    <div className="row">
+      <span className="big">❤️ {likes}</span>
+      <button onClick={likeLater}>Like (arrives in 1.5 s)</button>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Updater" data-kind="fix">
+function App() {
+  const [likes, setLikes] = useState(0);
+
+  function likeLater() {
+    setTimeout(() => {
+      setLikes((l) => l + 1); // ✅ React passes the latest value
+    }, 1500);
+  }
+
+  return (
+    <div className="row">
+      <span className="big">❤️ {likes}</span>
+      <button onClick={likeLater}>Like (arrives in 1.5 s)</button>
+    </div>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">All three clicks happen in the <b>same render</b>, where <code>likes</code> is <b>0</b>.</li>
+          <li class="step">Each timer callback <b>closes over</b> that 0. They all say “set to 0 + 1”.</li>
+          <li class="step">It's the snapshot rule from Part 2, spread out over time.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> new state depends on old state → <code>setX(prev =&gt; …)</code>. Always safe, even later.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 4 -->
+<section class="slide bug" id="bug-4" data-title="Bug 4 · Stale closure in an interval" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 04</span><h2>The timer stuck at 1</h2>
+      <p class="symptom">The screen shows <b>1s</b> forever. The console keeps saying <code>seconds = 0</code>.</p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function App() {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      console.log('tick, seconds =', seconds);
+      setSeconds(seconds + 1); // ❌ seconds is always 0 in here
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return <p className="big">{seconds}s</p>;
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Updater" data-kind="fix">
+function App() {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setSeconds((s) => s + 1); // ✅ doesn't need the outer value
+    }, 1000);
+    return () => clearInterval(id);
+  }, []);
+
+  return <p className="big">{seconds}s</p>;
+}
+</script>
+<script type="text/x-snippet" data-label="⚠ Works: [seconds]">
+function App() {
+  const [seconds, setSeconds] = useState(0);
+
+  useEffect(() => {
+    console.log('restart interval with seconds =', seconds);
+    const id = setInterval(() => setSeconds(seconds + 1), 1000);
+    return () => clearInterval(id);
+  }, [seconds]); // works, but tears down and restarts the timer every second
+
+  return <p className="big">{seconds}s</p>;
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">With <code>[]</code>, the effect runs <b>once</b>, in the first render, where <code>seconds = 0</code>.</li>
+          <li class="step">The interval callback is created then, so it <b>remembers that 0 forever</b> (a stale closure).</li>
+          <li class="step">Every tick sets it to <code>0 + 1</code>. Stuck at 1.</li>
+          <li class="step">The deps array is a promise to React: “my effect only uses these values”. <code>[]</code> was a lie here.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> list every value the effect reads in its deps (the linter does it for you), or use an updater so you don't need the value.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 5 -->
+<section class="slide bug" id="bug-5" data-title="Bug 5 · Missing cleanup" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 05</span><h2>The ghost timer</h2>
+      <p class="symptom">Click <b>Hide</b>: the ticks continue. Click <b>Show</b>: now <b>two</b> tickers are running.</p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+let made = 0;
+
+function Ticker() {
+  useEffect(() => {
+    const me = ++made;
+    setInterval(() => console.log(`⏱ tick from ticker #${me}`), 1000); // ❌ never stopped
+  }, []);
+  return <p>Ticker is on screen</p>;
+}
+
+function App() {
+  const [show, setShow] = useState(true);
+  return (
+    <>
+      <button onClick={() => setShow(!show)}>{show ? 'Hide' : 'Show'} ticker</button>
+      {show && <Ticker />}
+    </>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Cleanup" data-kind="fix">
+let made = 0;
+
+function Ticker() {
+  useEffect(() => {
+    const me = ++made;
+    const id = setInterval(() => console.log(`⏱ tick from ticker #${me}`), 1000);
+    return () => clearInterval(id); // ✅ stop it when the Ticker goes away
+  }, []);
+  return <p>Ticker is on screen</p>;
+}
+
+function App() {
+  const [show, setShow] = useState(true);
+  return (
+    <>
+      <button onClick={() => setShow(!show)}>{show ? 'Hide' : 'Show'} ticker</button>
+      {show && <Ticker />}
+    </>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">React removes the component from the screen. It <b>can't know</b> about the interval you started.</li>
+          <li class="step">With no cleanup, the timer lives on: a <b>memory leak</b>. If it calls <code>setState</code>, it updates a component that's gone.</li>
+          <li class="step">Every mount adds <b>another</b> timer. StrictMode would show you this on the first load.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> if the effect starts, subscribes or connects, return a cleanup that stops, unsubscribes or disconnects.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 6 -->
+<section class="slide bug" id="bug-6" data-title="Bug 6 · Effect loop" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 06</span><h2>The endless fetch loop</h2>
+      <p class="symptom">The request counter in the console never stops climbing, about 3 requests a second, forever. Press <b>■ Stop</b>.</p></div>
+    <div class="runner" data-notes="after" data-autorun="false">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function Posts({ topic }) {
+  const [posts, setPosts] = useState([]);
+  const options = { topic, limit: 2 }; // a NEW object on every render
+
+  useEffect(() => {
+    fakeApi.getPosts(options).then((data) => {
+      console.log('📡 request #' + fakeApi.requests);
+      setPosts(data);
+    });
+  }, [options]); // ❌ "changed" on every render
+
+  return <ul>{posts.map((p) => <li key={p.id}>{p.title}</li>)}</ul>;
+}
+
+function App() {
+  return <Posts topic="react" />;
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Depend on the primitive" data-kind="fix">
+function Posts({ topic }) {
+  const [posts, setPosts] = useState([]);
+
+  useEffect(() => {
+    const options = { topic, limit: 2 }; // ✅ created inside the effect
+    fakeApi.getPosts(options).then((data) => {
+      console.log('📡 request #' + fakeApi.requests);
+      setPosts(data);
+    });
+  }, [topic]); // ✅ a string: only "changes" when it really changes
+
+  return <ul>{posts.map((p) => <li key={p.id}>{p.title}</li>)}</ul>;
+}
+
+function App() {
+  return <Posts topic="react" />;
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">Every render creates a <b>new</b> <code>options</code> object. <code>{} === {}</code> is <code>false</code>.</li>
+          <li class="step">React sees a “changed” dependency → runs the effect → fetch → <code>setPosts</code> → render → new <code>options</code> → …</li>
+          <li class="step">In a real app: thousands of requests, a hot laptop, an angry backend team.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> put primitives (strings, numbers) in deps. Create objects <b>inside</b> the effect, or <code>useMemo</code> them.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 7 -->
+<section class="slide bug" id="bug-7" data-title="Bug 7 · Index as key" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 07</span><h2>Notes on the wrong person</h2>
+      <p class="symptom">Type a note next to <b>Sara</b>, then click <b>Add to top</b>. Your note is now next to “New person”.</p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 key={index}" data-kind="bug">
+function App() {
+  const [people, setPeople] = useState(['Sara', 'Omar', 'Lina']);
+
+  return (
+    <div className="stack">
+      <button onClick={() => setPeople(['New person', ...people])}>Add to top</button>
+      {people.map((name, index) => (
+        <div key={index} className="row"> {/* ❌ index as key */}
+          <b>{name}</b>
+          <input placeholder={`Note for ${name}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ key={person.id}" data-kind="fix">
+function App() {
+  const [people, setPeople] = useState([
+    { id: 1, name: 'Sara' },
+    { id: 2, name: 'Omar' },
+    { id: 3, name: 'Lina' },
+  ]);
+
+  function addToTop() {
+    setPeople([{ id: Date.now(), name: 'New person' }, ...people]);
+  }
+
+  return (
+    <div className="stack">
+      <button onClick={addToTop}>Add to top</button>
+      {people.map((person) => (
+        <div key={person.id} className="row"> {/* ✅ a stable id */}
+          <b>{person.name}</b>
+          <input placeholder={`Note for ${person.name}`} />
+        </div>
+      ))}
+    </div>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">React matches old and new items <b>by key</b>. Before: Sara was key <b>0</b>.</li>
+          <li class="step">After adding to the top, “New person” is key <b>0</b>. React thinks row 0 is the <b>same row</b> with a new name.</li>
+          <li class="step">So it keeps row 0's DOM, including the typed text in its input, and gives it to “New person”.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> keys must identify the <b>data</b>, not the position. Index keys are only OK for lists that never reorder, insert or delete.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 8 -->
+<section class="slide bug" id="bug-8" data-title="Bug 8 · Component inside a component" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 08</span><h2>The input that loses focus</h2>
+      <p class="symptom">Type a word. After <b>every letter</b> the input loses focus and you have to click it again.</p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function App() {
+  const [text, setText] = useState('');
+
+  function SearchBox() { // ❌ a NEW component type on every render
+    return <input value={text} onChange={(e) => setText(e.target.value)} placeholder="Type a word…" />;
+  }
+
+  return (
+    <div className="stack">
+      <SearchBox />
+      <p>You typed: {text}</p>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Move it outside" data-kind="fix">
+function SearchBox({ value, onChange }) { // ✅ defined once, at the top level
+  return <input value={value} onChange={(e) => onChange(e.target.value)} placeholder="Type a word…" />;
+}
+
+function App() {
+  const [text, setText] = useState('');
+  return (
+    <div className="stack">
+      <SearchBox value={text} onChange={setText} />
+      <p>You typed: {text}</p>
+    </div>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">Every render of <code>App</code> runs <code>function SearchBox() {…}</code> again and creates a <b>brand-new function</b>.</li>
+          <li class="step">To React, a new function means a <b>different component type</b>. Old <code>SearchBox</code> ≠ new <code>SearchBox</code>.</li>
+          <li class="step">So it destroys the old input and creates a new one on every keystroke. Focus and state are lost.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> define components at the <b>top level</b> of the file. Pass what they need as props.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 9 -->
+<section class="slide bug" id="bug-9" data-title="Bug 9 · The mysterious 0" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 09</span><h2>The mysterious 0</h2>
+      <p class="symptom">With no messages, the heading says <b>“Inbox 0”</b>. Where does the 0 come from?</p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function App() {
+  const [messages, setMessages] = useState([]);
+  return (
+    <div className="stack">
+      <h3>
+        Inbox {messages.length && <span className="badge">{messages.length}</span>} {/* ❌ */}
+      </h3>
+      <button onClick={() => setMessages([...messages, 'Hi'])}>Receive a message</button>
+      <button onClick={() => setMessages([])}>Clear</button>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ A real boolean" data-kind="fix">
+function App() {
+  const [messages, setMessages] = useState([]);
+  return (
+    <div className="stack">
+      <h3>
+        Inbox {messages.length > 0 && <span className="badge">{messages.length}</span>} {/* ✅ */}
+      </h3>
+      <button onClick={() => setMessages([...messages, 'Hi'])}>Receive a message</button>
+      <button onClick={() => setMessages([])}>Clear</button>
+    </div>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step"><code>a &amp;&amp; b</code> returns <code>a</code> if <code>a</code> is falsy. So <code>0 &amp;&amp; &lt;Badge/&gt;</code> is <b>0</b>.</li>
+          <li class="step">React skips <code>false</code>, <code>null</code> and <code>undefined</code>, but <b>numbers are rendered</b>, including 0.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> make the left side a real boolean: <code>count &gt; 0 &amp;&amp;</code>, <code>!!count &amp;&amp;</code>, or use a ternary.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 10 -->
+<section class="slide bug" id="bug-10" data-title="Bug 10 · Props copied into state" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 10</span><h2>Props copied into state</h2>
+      <p class="symptom">Click <b>Omar</b>. App knows the user changed, but the greeting still says <b>Hello, Sara</b>.</p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function Greeting({ user }) {
+  const [name, setName] = useState(user); // ❌ the prop is only used on the FIRST render
+  return <h3>Hello, {name}!</h3>;
+}
+
+function App() {
+  const [user, setUser] = useState('Sara');
+  return (
+    <>
+      {['Sara', 'Omar', 'Lina'].map((u) => (
+        <button key={u} onClick={() => setUser(u)}>{u}</button>
+      ))}
+      <p className="muted">App says the user is: {user}</p>
+      <Greeting user={user} />
+    </>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Just use the prop" data-kind="fix">
+function Greeting({ user }) {
+  return <h3>Hello, {user}!</h3>; // ✅ no copy, always in sync
+}
+
+function App() {
+  const [user, setUser] = useState('Sara');
+  return (
+    <>
+      {['Sara', 'Omar', 'Lina'].map((u) => (
+        <button key={u} onClick={() => setUser(u)}>{u}</button>
+      ))}
+      <p className="muted">App says the user is: {user}</p>
+      <Greeting user={user} />
+    </>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step"><code>useState(initial)</code> uses <code>initial</code> <b>once</b>, on the first render. After that it's ignored.</li>
+          <li class="step">The prop changes, but the state copy doesn't. Now there are <b>two</b> sources of truth, and they disagree.</li>
+          <li class="step">If you really need an editable copy (a draft form), reset it with <code>&lt;Greeting key={user} /&gt;</code>.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> don't mirror props in state. Read the prop directly.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 11 -->
+<section class="slide bug" id="bug-11" data-title="Bug 11 · Hook inside if" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 11</span><h2>A hook inside an <code>if</code></h2>
+      <p class="symptom">Click <b>Toggle bio</b>: <code>Rendered more hooks than during the previous render.</code></p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function Profile({ showBio }) {
+  const [name] = useState('Sara');
+  if (showBio) {
+    const [bio] = useState('Loves React ⚛️'); // ❌ a hook inside an if
+    return <p>{name}: {bio}</p>;
+  }
+  return <p>{name}</p>;
+}
+
+function App() {
+  const [showBio, setShowBio] = useState(false);
+  return (
+    <>
+      <button onClick={() => setShowBio(!showBio)}>Toggle bio</button>
+      <Profile showBio={showBio} />
+    </>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Hooks at the top" data-kind="fix">
+function Profile({ showBio }) {
+  const [name] = useState('Sara');
+  const [bio] = useState('Loves React ⚛️'); // ✅ always called, in the same order
+  if (showBio) {
+    return <p>{name}: {bio}</p>;
+  }
+  return <p>{name}</p>;
+}
+
+function App() {
+  const [showBio, setShowBio] = useState(false);
+  return (
+    <>
+      <button onClick={() => setShowBio(!showBio)}>Toggle bio</button>
+      <Profile showBio={showBio} />
+    </>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">React remembers hooks by <b>call order</b>: render 1 called <b>1</b> <code>useState</code>.</li>
+          <li class="step">Render 2 calls <b>2</b>. The count doesn't match, so React can't know which state is which.</li>
+          <li class="step">Same problem with hooks in loops, or after an early <code>return</code>.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> call hooks at the top, unconditionally, every render. Put the <code>if</code> <i>after</i> the hooks.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 12 -->
+<section class="slide bug" id="bug-12" data-title="Bug 12 · Race condition" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 12</span><h2>Search shows the wrong results</h2>
+      <p class="symptom">Type <b>ram</b> quickly. You should get only <b>Rami</b>, but the list ends up with everything containing “r”.</p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function App() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+
+  useEffect(() => {
+    if (!query) { setResults([]); return; }
+    console.log(`📡 ask for "${query}"`);
+    fakeApi.searchPeople(query).then((data) => {
+      console.log(`📬 answer for "${query}"`);
+      setResults(data); // ❌ even if a newer search has started
+    });
+  }, [query]);
+
+  return (
+    <div className="stack">
+      <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder='Type "ram" quickly' />
+      <ul>{results.map((p) => <li key={p}>{p}</li>)}</ul>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Ignore stale answers" data-kind="fix">
+function App() {
+  const [query, setQuery] = useState('');
+  const [results, setResults] = useState([]);
+
+  useEffect(() => {
+    if (!query) { setResults([]); return; }
+    let ignore = false;
+    console.log(`📡 ask for "${query}"`);
+    fakeApi.searchPeople(query).then((data) => {
+      if (ignore) return console.log(`🗑️ ignored old answer for "${query}"`);
+      console.log(`📬 answer for "${query}"`);
+      setResults(data);
+    });
+    return () => { ignore = true; }; // ✅ a newer query makes this one stale
+  }, [query]);
+
+  return (
+    <div className="stack">
+      <input value={query} onChange={(e) => setQuery(e.target.value)} placeholder='Type "ram" quickly' />
+      <ul>{results.map((p) => <li key={p}>{p}</li>)}</ul>
+    </div>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">Each letter starts a request: “r”, “ra”, “ram”.</li>
+          <li class="step">Networks don't answer in order. Here, the shorter word is slower, so “r” answers <b>last</b>.</li>
+          <li class="step">The last answer to arrive wins, even though it's for an old query. Read the order in the console.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> every fetch effect needs a cleanup that marks old requests as stale (or an <code>AbortController</code>). Libraries like TanStack Query do this for you.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 13 -->
+<section class="slide bug" id="bug-13" data-title="Bug 13 · Form reloads the page" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 13</span><h2>The form that resets everything</h2>
+      <p class="symptom">Type an email and press <b>Subscribe</b>. “Thanks!” flashes, then the whole app starts over, empty.</p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function App() {
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
+
+  function handleSubmit() { // ❌ forgot e.preventDefault()
+    setSent(true);
+    console.log('sending', email);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="stack">
+      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@mail.com" />
+      <button className="primary">Subscribe</button>
+      {sent && <p className="ok">Thanks! 🎉</p>}
+    </form>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ preventDefault" data-kind="fix">
+function App() {
+  const [email, setEmail] = useState('');
+  const [sent, setSent] = useState(false);
+
+  function handleSubmit(e) {
+    e.preventDefault(); // ✅ stay on this page
+    setSent(true);
+    console.log('sending', email);
+  }
+
+  return (
+    <form onSubmit={handleSubmit} className="stack">
+      <input value={email} onChange={(e) => setEmail(e.target.value)} placeholder="you@mail.com" />
+      <button className="primary">Subscribe</button>
+      {sent && <p className="ok">Thanks! 🎉</p>}
+    </form>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">A <code>&lt;form&gt;</code> submit is a <b>browser</b> feature from before JavaScript apps: it sends the data and <b>loads a new page</b>.</li>
+          <li class="step">A reload throws away all JavaScript memory, React state included.</li>
+          <li class="step">This deck catches the reload and acts it out, so the slides survive. A real page would really reload.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> handling a form in React? First line: <code>e.preventDefault()</code>. (React 19 form Actions do this for you.)</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 14 -->
+<section class="slide bug" id="bug-14" data-title="Bug 14 · Uncontrolled → controlled" data-part="6">
+  <div class="wrap">
+    <div class="bug-head"><span class="bug-tag">BUG 14</span><h2>Uncontrolled → controlled</h2>
+      <p class="symptom">Type one letter. A warning appears: <code>A component is changing an uncontrolled input to be controlled.</code></p></div>
+    <div class="runner" data-notes="after">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+function App() {
+  const [name, setName] = useState(); // ❌ starts as undefined
+  return (
+    <div className="stack">
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Type your name" />
+      <p>Hi {name}</p>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Start with ''" data-kind="fix">
+function App() {
+  const [name, setName] = useState(''); // ✅ always a string
+  return (
+    <div className="stack">
+      <input value={name} onChange={(e) => setName(e.target.value)} placeholder="Type your name" />
+      <p>Hi {name}</p>
+    </div>
+  );
+}
+</script>
+      <aside class="why r-notes">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step"><code>value={undefined}</code> means “no value”, so the input manages itself (<b>uncontrolled</b>).</li>
+          <li class="step">After the first letter, <code>value="S"</code>, so React suddenly controls it. Switching modes mid-life is unpredictable.</li>
+          <li class="step">Same thing happens with data from an API that isn't loaded yet: <code>value={user.name}</code>.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> controlled inputs always get a string: <code>useState('')</code>, or <code>value={x ?? ''}</code>.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ WRAP UP ═══════════════════════════════ -->
+
+<section class="slide" data-title="Debugging checklist" data-part="6">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">When React “doesn't work”</p><h2>The React debugging checklist</h2></div>
+    <ol class="checklist">
+      <li class="step"><span><b>Read the console.</b> React's warnings name the bug: keys, controlled inputs, hooks order, max update depth.</span></li>
+      <li class="step"><span><b>Screen not updating?</b> Did you call the setter? Did you <b>mutate</b> instead of copying (Bug 1)?</span></li>
+      <li class="step"><span><b>Old value?</b> It's a snapshot or a stale closure: use an updater, or fix the deps (Bugs 3 and 4).</span></li>
+      <li class="step"><span><b>Runs too often?</b> A new object or function in the deps (Bug 6), or a setter called during render (Bug 2).</span></li>
+      <li class="step"><span><b>State lost or stuck?</b> Think <b>identity</b>: keys, position in the tree, components defined inside components (Bugs 7, 8, 10).</span></li>
+      <li class="step"><span><b>Use the tools:</b> <code>console.log</code> in render, React DevTools (Components tab, highlight updates), StrictMode, <code>eslint-plugin-react-hooks</code>.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide" data-title="Final quiz" data-part="6">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Final quiz · click to flip</p><h2>Spot the bug</h2></div>
+    <div class="flips">
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 1</span><code class="hl">useEffect(() =&gt; {
+  const id = setInterval(tick, 1000);
+}, []);</code></span>
+        <span class="face back"><span class="ans bad">No cleanup</span><span class="exp">Add <code>return () =&gt; clearInterval(id)</code> (Bug 5).</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 2</span><code class="hl">{items.map((item, i) =&gt;
+  &lt;Row key={i} item={item} /&gt;)}</code></span>
+        <span class="face back"><span class="ans bad">Index as key</span><span class="exp">Breaks when items are inserted, deleted or sorted. Use <code>item.id</code> (Bug 7).</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 3</span><code class="hl">const [user, setUser] = useState(props.user);</code></span>
+        <span class="face back"><span class="ans bad">Mirrored prop</span><span class="exp">It won't follow prop changes. Use <code>props.user</code> directly (Bug 10).</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 4</span><code class="hl">useEffect(() =&gt; {
+  fetchData(filters);
+}, [filters]); // filters = { … } built in render</code></span>
+        <span class="face back"><span class="ans bad">Infinite loop</span><span class="exp">A new object every render → the effect runs every render (Bug 6).</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 5</span><code class="hl">setTodos(todos.map(t =&gt;
+  t.id === id ? { ...t, done: true } : t));</code></span>
+        <span class="face back"><span class="ans good">✓ Correct</span><span class="exp">A new array, and a new object for the changed item.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 6</span><code class="hl">if (!user) return &lt;Spinner /&gt;;
+const [tab, setTab] = useState('posts');</code></span>
+        <span class="face back"><span class="ans bad">Hook after early return</span><span class="exp">Different number of hooks per render. Move <code>useState</code> above the <code>if</code> (Bug 11).</span></span>
+      </span></button>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Cheat sheet" data-part="6">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Take this home</p><h2>Cheat sheet</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Hook / API</th><th>Use it for</th><th>Remember</th></tr></thead>
+        <tbody>
+          <tr><td><code>useState</code></td><td>Values that change and show on screen</td><td>Snapshot per render · <code>set(prev =&gt; …)</code> · never mutate</td></tr>
+          <tr><td><code>useEffect</code></td><td>Syncing with the outside world while on screen</td><td>Honest deps · cleanup · not for derived values</td></tr>
+          <tr><td><code>useRef</code></td><td>DOM nodes, values that don't affect the screen</td><td>Changing <code>.current</code> doesn't re-render</td></tr>
+          <tr><td><code>useContext</code></td><td>Theme, user, language: data many components need</td><td>Readers re-render when the value changes</td></tr>
+          <tr><td><code>useReducer</code></td><td>Complex state with many kinds of updates</td><td>Pure reducer: <code>(state, action) =&gt; new state</code></td></tr>
+          <tr><td><code>useMemo</code> / <code>useCallback</code></td><td>Slow calculations · stable props for <code>memo</code></td><td>Measure first</td></tr>
+          <tr><td><code>key</code></td><td>List items · resetting a component</td><td>Stable id from your data</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rule big">UI = f(state). Keep state minimal, never mutate it, and let React do the DOM.<small>When something breaks, ask: which <b>render</b> is this code running in, and what did it see?</small></div>
+  </div>
+</section>
+
+</main>
+
+<div class="progress" aria-hidden="true"><div id="progress-bar"></div></div>
+<nav class="pager" aria-label="Slide navigation">
+  <button id="prev" aria-label="Previous">←</button>
+  <button id="next" aria-label="Next">→</button>
+</nav>
+
+<dialog id="overview" aria-label="All slides">
+  <div class="ov-head"><h2>All slides</h2><button class="btn btn-ghost ov-close">Close (O)</button></div>
+  <div class="ov-grid"></div>
+</dialog>
+
+<script src="vendor/react.development.js"></script>
+<script src="vendor/react-dom.development.js"></script>
+<script src="vendor/babel.min.js"></script>
+<script src="js/common.js"></script>
+<script src="js/runner.js"></script>
+<script src="js/visuals.js"></script>
+<script src="js/deck.js"></script>
+</body>
+</html>

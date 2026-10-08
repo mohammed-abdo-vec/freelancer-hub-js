@@ -32,7 +32,7 @@ function priceWithTax(price, taxRate = 0.15) {
   return price + price * taxRate;
 }
 
-console.log(square(5), celsiusToFahrenheit(100), greet(), greet("Sara"), add(2, 3));
+console.log(square(5), celsiusToFahrenheit(100), greet(), greet("mohammed"), add(2, 3));
 
 // TODO 6
 function logDouble(n) {

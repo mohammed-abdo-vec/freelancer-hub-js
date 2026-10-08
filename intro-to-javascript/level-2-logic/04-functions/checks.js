@@ -3,7 +3,7 @@ checks(function () {
   check("TODO 1: square(-3) → 9", () => square(-3), 9);
   check("TODO 2: celsiusToFahrenheit(0) → 32", () => celsiusToFahrenheit(0), 32);
   check("TODO 2: celsiusToFahrenheit(100) → 212", () => celsiusToFahrenheit(100), 212);
-  check('TODO 3: greet("Sara") → "Hello, Sara!"', () => greet("Sara"), "Hello, Sara!");
+  check('TODO 3: greet("mohammed") → "Hello, mohammed!"', () => greet("mohammed"), "Hello, mohammed!");
   check('TODO 3: greet() → "Hello, friend!"', () => greet(), "Hello, friend!");
   check("TODO 4: add is a function", () => typeof add, "function");
   check("TODO 4: add(2, 3) → 5", () => add(2, 3), 5);

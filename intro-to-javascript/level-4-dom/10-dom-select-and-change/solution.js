@@ -4,7 +4,7 @@
 
 // TODO 1: querySelector takes the same selectors you write in CSS.
 const title = document.querySelector("#title");
-title.textContent = "Sara Ali";
+title.textContent = "mohammed Ali";
 
 // TODO 2
 const subtitle = document.querySelector(".subtitle");
@@ -37,4 +37,4 @@ console.log("Changed:", title, subtitle, card);
 // BONUS: innerHTML reads the string as HTML, so tags become real elements.
 // Never do this with text users typed: they could inject a <script> or
 // <img onerror=…>. textContent is always safe.
-// title.innerHTML = "<em>Sara</em> Ali";
+// title.innerHTML = "<em>mohammed</em> Ali";

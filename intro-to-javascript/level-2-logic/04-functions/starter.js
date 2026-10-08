@@ -18,7 +18,7 @@ console.log("double(4) =", double(4));
 
 
 // TODO 3: function greet(name = "friend") → returns `Hello, ${name}!`
-//         greet("Sara") → "Hello, Sara!"     greet() → "Hello, friend!"
+//         greet("mohammed") → "Hello, mohammed!"     greet() → "Hello, friend!"
 //         The = "friend" part is a DEFAULT value, used when nothing is passed in.
 
 

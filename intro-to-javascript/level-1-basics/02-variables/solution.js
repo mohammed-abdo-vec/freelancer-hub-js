@@ -3,7 +3,7 @@
 // =============================================================
 
 // TODO 1 + 2: a name won't change while the program runs, so use const.
-const firstName = "Sara";
+const firstName = "mohammed";
 const lastName = "Ali";
 
 // TODO 3: age WILL change (TODO 5), so it has to be let.

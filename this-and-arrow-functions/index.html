@@ -1,0 +1,1258 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>this, Arrows &amp; Bugs</title>
+  <link rel="stylesheet" href="css/deck.css">
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand"><span class="brand-this">this</span><span class="brand-name">this · arrow functions · bugs</span></div>
+  <div class="part-label" id="part-label"></div>
+  <div class="controls">
+    <div class="mode-toggle" role="group" aria-label="Run the examples as">
+      <span class="mode-caption">Run as</span>
+      <button data-mode="module" title="ES modules, classes, 'use strict' (press M)">Module</button>
+      <button data-mode="script" title="An old classic &lt;script&gt; in sloppy mode (press M)">Classic script</button>
+    </div>
+    <button class="icon-btn" id="overview-btn" title="All slides (O)" aria-label="All slides">☰</button>
+    <button class="icon-btn" id="theme-btn" title="Light / dark (T)" aria-label="Toggle theme">◐</button>
+    <button class="icon-btn" id="fs-btn" title="Fullscreen (F)" aria-label="Fullscreen">⛶</button>
+    <span class="counter" id="counter"></span>
+  </div>
+</header>
+
+<main class="deck" id="deck">
+
+<!-- ═══════════════════════════════ INTRO ═══════════════════════════════ -->
+
+<section class="slide title-slide" data-title="Title" data-part="0">
+  <div class="wrap">
+    <p class="kicker">JavaScript · deep dive</p>
+    <h1><code class="big-this">this</code>, arrow functions, and the bugs in between</h1>
+    <p class="lead">One small word that changes meaning depending on <b>who calls</b> the function. Let's make it predictable.</p>
+    <div class="hop" aria-hidden="true">
+      <div class="hop-objs"><span>mohammed</span><span>omar</span><span>window</span></div>
+      <span class="hop-this">this</span>
+    </div>
+    <p class="hint">Press <kbd>→</kbd> to start · <kbd>O</kbd> all slides · <kbd>M</kbd> run mode · <kbd>R</kbd> run code · <kbd>T</kbd> theme · <kbd>F</kbd> fullscreen</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Today" data-part="0">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Today</p>
+      <h2>Three parts</h2>
+    </div>
+    <div class="agenda">
+      <a href="#" data-goto="#part-1" style="--c: var(--p1)">
+        <div class="num">1</div>
+        <h3>What is <span class="this-word">this</span>?</h3>
+        <p>One rule: look at how the function is <b>called</b>. Plus <code>call</code>, <code>bind</code> and <code>new</code>.</p>
+      </a>
+      <a href="#" data-goto="#part-2" style="--c: var(--p2)">
+        <div class="num">2</div>
+        <h3>Arrow vs normal functions</h3>
+        <p>Shorter syntax is the small difference. Arrows <b>don't have their own</b> <span class="this-word">this</span>. That's the big one.</p>
+      </a>
+      <a href="#" data-goto="#part-3" style="--c: var(--p3)">
+        <div class="num">3</div>
+        <h3>10 real bugs</h3>
+        <p>Run each bug, watch it break, find out why, then fix it more than one way.</p>
+      </a>
+    </div>
+    <p class="rule step">Every example is <b>real, runnable code</b>. Press <b>▶ Run</b>, or click <b>✎ Edit</b> to change it live.</p>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART 1 ═══════════════════════════════ -->
+
+<section class="slide divider" id="part-1" data-title="Part 1 · What is this?" data-part="1">
+  <div class="wrap">
+    <div class="part-num">01</div>
+    <h1>What is <span class="this-word">this</span>?</h1>
+    <p class="lead">Every normal function has a hidden variable called <code>this</code>. Its value isn't decided when you <i>write</i> the function. It's decided each time you <i>call</i> it.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="this is like the word “I”" data-part="1">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">An analogy</p>
+      <h2><span class="this-word">this</span> works like the word “I”</h2>
+    </div>
+    <div class="cols cols-60">
+      <div class="speech">
+        <div class="bubble step"><span class="avatar" style="background:#2563eb">S</span><span class="text">“<b>I</b> am hungry.”</span><span class="means">I = mohammed</span></div>
+        <div class="bubble step"><span class="avatar" style="background:#be185d">O</span><span class="text">“<b>I</b> am hungry.”</span><span class="means">I = Omar</span></div>
+        <p class="step">Same sentence, different speaker. “I” means <b>whoever is speaking right now</b>.</p>
+        <div class="rule big step">For a normal function, <span class="this-word">this</span> = whoever <u>calls</u> it.<small>Not where the function was written. Not where it is stored. Who calls it, at the moment it is called.</small></div>
+      </div>
+      <div class="runner">
+<script type="text/x-snippet" data-label="Same function, two callers">
+function introduce() {
+  console.log(`I am ${this.username}`);
+}
+
+const mohammed = { username: 'mohammed', introduce };
+const omar = { username: 'Omar', introduce };
+
+mohammed.introduce(); // the caller is mohammed
+omar.introduce(); // the caller is omar
+</script>
+<script type="text/x-snippet" data-label="…and with no caller?" data-kind="bug">
+function introduce() {
+  console.log(`I am ${this.username}`);
+}
+
+introduce(); // ❌ who is "I" here? nobody
+</script>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Rule: look left of the dot" data-part="1">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">The rule</p>
+      <h2>Find the call, then look <u>left of the dot</u></h2>
+    </div>
+    <div class="machine" data-scenarios="cat.speak()|dog.speak()">
+      <div class="m-left">
+        <pre class="code">
+function speak() {
+  console.log(`${this.sound}! I am ${this.petName}`);
+}
+
+const cat = { petName: 'Tom', sound: 'Meow', speak };
+const dog = { petName: 'Rex', sound: 'Woof', speak };
+        </pre>
+      </div>
+    </div>
+    <p class="rule step">There is <b>one</b> <code>speak</code> function. The cat and the dog both point to it. <span class="this-word">this</span> changes because the <b>call</b> changes.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="No dot = no owner" data-part="1">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Where the trouble starts</p>
+      <h2>No dot? No owner.</h2>
+      <p class="lead">Taking a method out of its object, or giving it to someone else to call, breaks the link.</p>
+    </div>
+    <div class="machine" data-scenarios="speak()|const f = cat.speak; f()|setTimeout(cat.speak, 1000)">
+      <div class="m-left">
+        <pre class="code">
+function speak() {
+  console.log(`${this.sound}! I am ${this.petName}`);
+}
+
+const cat = { petName: 'Tom', sound: 'Meow', speak };
+        </pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="undefined or window?" data-part="1">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Wait, which one is it?</p>
+      <h2>A call with no owner: <code>undefined</code> or <code>window</code>?</h2>
+    </div>
+    <div class="modes">
+      <div class="card" style="--c: var(--fix)">
+        <h3>Modern code <span class="muted" style="font-weight:400">· modules, classes, "use strict", Vite, React</span></h3>
+        <p class="verdict">this = undefined</p>
+        <p>Using it <b>crashes right away</b>: <code>TypeError: Cannot read properties of undefined</code>. That's good: the bug is <b>loud</b> and points at the line.</p>
+      </div>
+      <div class="card" style="--c: var(--bug)">
+        <h3>Old classic <code>&lt;script&gt;</code> <span class="muted" style="font-weight:400">· “sloppy mode”</span></h3>
+        <p class="verdict">this = window</p>
+        <p>Nothing crashes. You get <code>undefined</code>, <code>NaN</code> and <b>accidental global variables</b>. The bug is <b>silent</b> and shows up far from its cause.</p>
+      </div>
+    </div>
+    <div class="cols">
+      <div class="runner">
+<script type="text/x-snippet" data-label="Who am I?">
+function whoAmI() {
+  console.log('this =', this);
+}
+whoAmI(); // plain call, no dot
+</script>
+      </div>
+      <p class="rule step">The <b>Run as</b> switch at the top (or <kbd>M</kbd>) runs every example both ways. Try it on this one, and on each bug in Part 3.</p>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="call, apply, bind" data-part="1">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Choosing this yourself</p>
+      <h2><code>call</code>, <code>apply</code>, <code>bind</code>: you set <span class="this-word">this</span></h2>
+    </div>
+    <div class="cols cols-60">
+    <div class="mnemo">
+      <div class="card step"><div class="big">.call(obj, a, b)</div><p><b>C</b>all now, args separated by <b>C</b>ommas</p></div>
+      <div class="card step"><div class="big">.apply(obj, [a, b])</div><p><b>A</b>pply now, args in an <b>A</b>rray</p></div>
+      <div class="card step"><div class="big">.bind(obj)</div><p>Don't call yet. <b>Returns a new function</b> with <span class="this-word">this</span> locked forever</p></div>
+    </div>
+    <div class="runner">
+<script type="text/x-snippet" data-label="call / apply / bind">
+function introduce(greeting, mark) {
+  console.log(`${greeting}, I am ${this.username}${mark}`);
+}
+const mohammed = { username: 'mohammed' };
+
+introduce.call(mohammed, 'Hi', '!');       // runs now
+introduce.apply(mohammed, ['Hey', '?']);   // runs now, args in an array
+
+const mohammedIntro = introduce.bind(mohammed); // a NEW function, this locked to mohammed
+mohammedIntro('Hello', '.');
+setTimeout(mohammedIntro, 800, 'Later', '…'); // still mohammed, even as a callback ✅
+</script>
+    </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="new creates this" data-part="1">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Rule number four</p>
+      <h2><code>new</code> makes a brand-new object and calls it <span class="this-word">this</span></h2>
+    </div>
+    <div class="new-demo"></div>
+    <p class="muted step">Today we write <code>class Pet { constructor(…) { … } }</code>. It does the same thing underneath, and it throws a clear error if you forget <code>new</code>.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="The 4 rules, in order" data-part="1">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Summary</p>
+      <h2>How JavaScript picks <span class="this-word">this</span>: check from the top</h2>
+    </div>
+    <div class="table-wrap">
+      <table class="priority">
+        <thead><tr><th>#</th><th>How was it called?</th><th>this is…</th><th>Example</th></tr></thead>
+        <tbody>
+          <tr class="step"><td>1</td><td>With <code>new</code></td><td>the brand-new object</td><td><code>new Pet('Rex')</code></td></tr>
+          <tr class="step"><td>2</td><td>With <code>call</code> / <code>apply</code> / <code>bind</code></td><td>whatever you passed</td><td><code>speak.call(dog)</code></td></tr>
+          <tr class="step"><td>3</td><td>As <code>obj.method()</code></td><td>the object left of the dot</td><td><code>cat.speak()</code></td></tr>
+          <tr class="step"><td>4</td><td>Plain <code>fn()</code></td><td><code>undefined</code> (strict) · <code>window</code> (sloppy)</td><td><code>speak()</code></td></tr>
+          <tr class="step"><td>🌐</td><td>The browser calls it for you</td><td>listeners: the <b>element</b> · timers: <code>window</code></td><td><code>btn.addEventListener('click', fn)</code></td></tr>
+          <tr class="step arrow-row"><td>=&gt;</td><td><b>Arrow function</b></td><td><b>ignores every rule above.</b> Uses the <span class="this-word">this</span> of the code around it</td><td><code>() =&gt; this</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Quiz: what is this?" data-part="1">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Quiz · click a card to flip it</p>
+      <h2>What is <span class="this-word">this</span> inside <code>who</code>?</h2>
+    </div>
+    <pre class="code">
+const robot = { id: 'R2', who() { return this; } };
+const who = robot.who;
+    </pre>
+    <div class="flips">
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 1</span><code class="hl">robot.who()</code></span>
+        <span class="face back"><span class="ans good">robot</span><span class="exp">Left of the dot is <code>robot</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 2</span><code class="hl">who()</code></span>
+        <span class="face back"><span class="ans bad">undefined / window</span><span class="exp">Same function, but no dot means no owner. Strict mode: undefined. Sloppy: window.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 3</span><code class="hl">who.call({ id: 'C3' })</code></span>
+        <span class="face back"><span class="ans good">{ id: 'C3' }</span><span class="exp"><code>call</code> passes <span class="this-word">this</span> explicitly.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 4</span><code class="hl">const bb = { id: 'BB8', who: robot.who };
+bb.who()</code></span>
+        <span class="face back"><span class="ans good">bb</span><span class="exp">Where the function came from doesn't matter. Only the call does.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 5</span><code class="hl">setTimeout(robot.who, 0)</code></span>
+        <span class="face back"><span class="ans bad">window</span><span class="exp">Passed, not called. The timer calls it later, with this = window.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 6</span><code class="hl">btn.addEventListener('click', robot.who)</code></span>
+        <span class="face back"><span class="ans bad">btn (the element)</span><span class="exp">The browser calls listeners with this = the element.</span></span>
+      </span></button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART 2 ═══════════════════════════════ -->
+
+<section class="slide divider" id="part-2" data-title="Part 2 · Arrow vs normal" data-part="2">
+  <div class="wrap">
+    <div class="part-num">02</div>
+    <h1>Arrow functions vs normal functions</h1>
+    <p class="lead">Arrows look like a shorter way to write a function. But they behave differently, and the biggest difference is <span class="this-word">this</span>.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="From function to arrow" data-part="2">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Syntax, step by step</p>
+      <h2>Turning a function into an arrow function</h2>
+    </div>
+    <div class="morph"></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Arrow syntax shapes" data-part="2">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Syntax cheat sheet</p>
+      <h2>The shapes of an arrow function</h2>
+    </div>
+    <div class="cols cols-60">
+      <ul class="why" style="font-size:1.05rem">
+        <li class="step">No parameters? Use empty <code>()</code>.</li>
+        <li class="step">One parameter? The <code>()</code> are optional.</li>
+        <li class="step">One expression? It is <b>returned automatically</b>.</li>
+        <li class="step">Curly braces <code>{ }</code>? It's a normal body, so you <b>must</b> write <code>return</code>.</li>
+        <li class="step">Returning an object? Wrap it in <b>parentheses</b>: <code>({ … })</code>. (Bug 9 shows why.)</li>
+      </ul>
+      <div class="runner">
+<script type="text/x-snippet" data-label="All the shapes">
+const noParams  = () => 'hi';
+const oneParam  = n => n * 2;
+const twoParams = (a, b) => a + b;
+const withBody  = (a, b) => {
+  const sum = a + b;
+  return sum;            // braces → you must write return
+};
+const makeObj   = (n) => ({ value: n }); // object → wrap in ( )
+
+console.log(noParams(), oneParam(4), twoParams(2, 3));
+console.log(withBody(2, 3), makeObj(7));
+</script>
+<script type="text/x-snippet" data-label="Forgot return" data-kind="bug">
+const withBody = (a, b) => {
+  a + b;   // ❌ braces, but no return
+};
+console.log(withBody(2, 3));
+</script>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="The big difference: lexical this" data-part="2">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">The big difference</p>
+      <h2>An arrow has <u>no <span class="this-word">this</span> of its own</u>. It borrows the one around it.</h2>
+    </div>
+    <div class="scope-demo"></div>
+  </div>
+</section>
+
+<section class="slide" data-title="Arrows ignore call / bind" data-part="2">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Proof</p>
+      <h2>You can't change an arrow's <span class="this-word">this</span>. Not even with <code>call</code> or <code>bind</code>.</h2>
+    </div>
+    <div class="cols cols-60">
+      <div class="why" style="font-size:1.05rem">
+        <p class="step">A normal function's <span class="this-word">this</span> is set by the <b>call</b>, every time it's called.</p>
+        <p class="step">An arrow's <span class="this-word">this</span> was fixed when the arrow was <b>created</b>. It uses the <span class="this-word">this</span> of the code around it, and nothing can change it later.</p>
+        <p class="rule step">That is a bug when you want the object (a method). It's exactly what you want inside a method's callback.</p>
+      </div>
+      <div class="runner">
+<script type="text/x-snippet" data-label="call can't change an arrow">
+const mohammed = { username: 'mohammed' };
+
+function normal() { console.log('normal →', this); }
+const arrow = () => console.log('arrow  →', this);
+
+normal.call(mohammed);   // this = mohammed
+arrow.call(mohammed);    // ❌ ignored
+arrow.bind(mohammed)();  // ❌ ignored too
+</script>
+<script type="text/x-snippet" data-label="…which is great inside a method" data-kind="fix">
+const mohammed = {
+  username: 'mohammed',
+  friends: ['Omar', 'Lina'],
+  listFriends() {
+    // this = mohammed here (mohammed.listFriends())
+    this.friends.forEach((friend) => {
+      console.log(`${this.username} knows ${friend}`); // ✅ borrowed from listFriends
+    });
+  }
+};
+mohammed.listFriends();
+</script>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Comparison table" data-part="2">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Side by side</p>
+      <h2>Normal function vs arrow function</h2>
+    </div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th><code>function () { }</code></th><th><code>() =&gt; { }</code></th></tr></thead>
+        <tbody>
+          <tr class="step"><td><span class="this-word">this</span></td><td>Set by <b>how it is called</b></td><td>Borrowed from <b>where it is written</b></td></tr>
+          <tr class="step"><td><code>call</code> / <code>bind</code></td><td class="yes">Change this</td><td class="no">Ignored</td></tr>
+          <tr class="step"><td>As an object method</td><td class="yes">✓ this = the object</td><td class="no">✗ this is NOT the object</td></tr>
+          <tr class="step"><td>As a callback inside a method</td><td class="no">✗ loses this</td><td class="yes">✓ keeps this</td></tr>
+          <tr class="step"><td><code>new</code></td><td class="yes">✓ can build objects</td><td class="no">✗ “is not a constructor”</td></tr>
+          <tr class="step"><td><code>arguments</code></td><td class="yes">✓ its own</td><td class="no">✗ borrows the outer one</td></tr>
+          <tr class="step"><td>Use before its line</td><td class="yes">✓ declarations are hoisted</td><td class="no">✗ <code>const</code>: ReferenceError</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="When to use which" data-part="2">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Practical guide</p>
+      <h2>Which one should I write?</h2>
+    </div>
+    <div class="decide">
+      <div class="card step"><span class="tag tag-fn">method shorthand</span><span class="q">A method on an object or class</span><code class="hl a">greet() { return this.username; }</code></div>
+      <div class="card step"><span class="tag tag-arrow">arrow</span><span class="q">A callback inside a method that needs the outer this</span><code class="hl a">setTimeout(() => this.save(), 500);</code></div>
+      <div class="card step"><span class="tag tag-arrow">arrow</span><span class="q">Short helpers: map, filter, sort…</span><code class="hl a">prices.map((p) => p * 1.05);</code></div>
+      <div class="card step"><span class="tag tag-fn">function / class</span><span class="q">Something you call with new</span><code class="hl a">class Pet { constructor(n) { this.n = n; } }</code></div>
+      <div class="card step"><span class="tag tag-fn">function or event</span><span class="q">An event listener that needs the clicked element</span><code class="hl a">btn.addEventListener('click', (e) => e.currentTarget);</code></div>
+      <div class="card step"><span class="tag tag-arrow">arrow field / bind once</span><span class="q">A class method you pass around as a handler</span><code class="hl a">onClick = () => { this.count++; };</code></div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ PART 3 ═══════════════════════════════ -->
+
+<section class="slide divider compact" id="part-3" data-title="Part 3 · The bugs" data-part="3">
+  <div class="wrap">
+    <div class="part-num">03</div>
+    <h1>The bugs you get when you mix them up</h1>
+    <p class="lead">For each one: run it, read the error, guess why, then press <kbd>→</kbd> to show the answer.</p>
+    <ol class="bug-index">
+      <li><a href="#" data-goto="#bug-1"><span class="n">01</span>The arrow function method</a></li>
+      <li><a href="#" data-goto="#bug-2"><span class="n">02</span>The callback inside a method</a></li>
+      <li><a href="#" data-goto="#bug-3"><span class="n">03</span>The frozen stopwatch</a></li>
+      <li><a href="#" data-goto="#bug-4"><span class="n">04</span>The Like button that crashes</a></li>
+      <li><a href="#" data-goto="#bug-5"><span class="n">05</span>Pulling a method out of its object</a></li>
+      <li><a href="#" data-goto="#bug-6"><span class="n">06</span>The arrow that can't find the button</a></li>
+      <li><a href="#" data-goto="#bug-7"><span class="n">07</span>The listener that won't go away</a></li>
+      <li><a href="#" data-goto="#bug-8"><span class="n">08</span>Arrows aren't full functions</a></li>
+      <li><a href="#" data-goto="#bug-9"><span class="n">09</span>The object that disappears</a></li>
+      <li><a href="#" data-goto="#bug-10"><span class="n">10</span>“It worked before I made it an arrow”</a></li>
+    </ol>
+  </div>
+</section>
+
+<!-- BUG 1 -->
+<section class="slide bug" id="bug-1" data-title="Bug 1 · Arrow as a method" data-part="3">
+  <div class="wrap">
+    <div class="bug-head">
+      <span class="bug-tag">BUG 01</span>
+      <h2>The arrow function method</h2>
+      <p class="symptom">You see: <span class="only-module"><code>TypeError: Cannot read properties of undefined (reading 'username')</code></span><span class="only-script"><code>Hi, undefined</code></span></p>
+    </div>
+    <div class="bug-grid">
+      <div class="runner">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+const user = {
+  username: 'mohammed',
+  greet: () => {
+    console.log(`Hi, ${this.username}`); // ❌
+  }
+};
+user.greet(); // left of the dot is user… right?
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: method shorthand" data-kind="fix">
+const user = {
+  username: 'mohammed',
+  greet() {
+    console.log(`Hi, ${this.username}`); // ✅ this = user
+  }
+};
+user.greet();
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: function" data-kind="fix">
+const user = {
+  username: 'mohammed',
+  greet: function () {
+    console.log(`Hi, ${this.username}`); // ✅ this = user
+  }
+};
+user.greet();
+</script>
+      </div>
+      <aside class="why">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step"><code>user.greet()</code> looks right: <code>user</code> is left of the dot.</li>
+          <li class="step">But <code>greet</code> is an <span class="arrow-word">=&gt;</span>, and arrows <b>ignore who calls them</b>.</li>
+          <li class="step">It borrows <span class="this-word">this</span> from the code around it. The <code>{ }</code> of an object literal is <b>not</b> a function, so “around it” means the top of the file.</li>
+          <li class="step">At the top of the file, <span class="this-word">this</span> is <code>undefined</code> (module) or <code>window</code> (script).</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> methods are never arrows. Write <code>greet() { }</code>.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 2 -->
+<section class="slide bug" id="bug-2" data-title="Bug 2 · Callback inside a method" data-part="3">
+  <div class="wrap">
+    <div class="bug-head">
+      <span class="bug-tag">BUG 02</span>
+      <h2>The callback inside a method</h2>
+      <p class="symptom">You see: <span class="only-module"><code>TypeError: Cannot read properties of undefined (reading 'total')</code></span><span class="only-script"><code>total: 0</code>, and a new global <code>window.total = NaN</code></span></p>
+    </div>
+    <div class="bug-grid">
+      <div class="runner">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+const cart = {
+  items: [12, 30, 8],
+  total: 0,
+  sum() {
+    this.items.forEach(function (price) {
+      this.total += price; // ❌ a new function = a new this
+    });
+    return this.total;
+  }
+};
+console.log('total:', cart.sum());
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: arrow" data-kind="fix">
+const cart = {
+  items: [12, 30, 8],
+  total: 0,
+  sum() {
+    this.items.forEach((price) => {
+      this.total += price; // ✅ borrows sum's this = cart
+    });
+    return this.total;
+  }
+};
+console.log('total:', cart.sum());
+</script>
+<script type="text/x-snippet" data-label="✅ Old school: self = this" data-kind="fix">
+const cart = {
+  items: [12, 30, 8],
+  total: 0,
+  sum() {
+    const self = this; // ✅ save it in a normal variable (pre-2015 code)
+    this.items.forEach(function (price) {
+      self.total += price;
+    });
+    return this.total;
+  }
+};
+console.log('total:', cart.sum());
+</script>
+<script type="text/x-snippet" data-label="✅ Best: no inner this" data-kind="fix">
+const cart = {
+  items: [12, 30, 8],
+  sum() {
+    return this.items.reduce((total, price) => total + price, 0); // ✅
+  }
+};
+console.log('total:', cart.sum());
+</script>
+      </div>
+      <aside class="why">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step"><code>cart.sum()</code>, so inside <code>sum</code>, <span class="this-word">this</span> = <code>cart</code>. ✓</li>
+          <li class="step"><code>function (price) { }</code> is a <b>new normal function</b> with its <b>own</b> <span class="this-word">this</span>.</li>
+          <li class="step"><code>forEach</code> calls it as a plain <code>callback(price)</code>. No dot, no owner.</li>
+          <li class="step">So <code>this.total</code> is <code>undefined.total</code> (crash) or <code>window.total</code> (silent NaN).</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> a callback inside a method that needs <span class="this-word">this</span>? Make it an arrow.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 3 -->
+<section class="slide bug" id="bug-3" data-title="Bug 3 · The frozen stopwatch" data-part="3">
+  <div class="wrap">
+    <div class="bug-head">
+      <span class="bug-tag">BUG 03</span>
+      <h2>The frozen stopwatch</h2>
+      <p class="symptom">You see: the number stays at <b>0</b>, and a new error appears <b>every second</b>.</p>
+    </div>
+    <div class="bug-grid">
+      <div class="runner" data-stage="#stage-watch">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+class Stopwatch {
+  constructor(display) {
+    this.seconds = 0;
+    this.display = display;
+  }
+  start() {
+    console.log('start() this =', this);
+    setInterval(function () {
+      this.seconds++;                          // ❌ which this?
+      this.display.textContent = this.seconds;
+    }, 1000);
+  }
+}
+const watch = new Stopwatch(document.querySelector('#watch'));
+watch.start();
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: arrow" data-kind="fix">
+class Stopwatch {
+  constructor(display) {
+    this.seconds = 0;
+    this.display = display;
+  }
+  start() {
+    setInterval(() => {
+      this.seconds++;                          // ✅ borrows start's this
+      this.display.textContent = this.seconds;
+    }, 1000);
+  }
+}
+const watch = new Stopwatch(document.querySelector('#watch'));
+watch.start();
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: bind" data-kind="fix">
+class Stopwatch {
+  constructor(display) {
+    this.seconds = 0;
+    this.display = display;
+  }
+  tick() {
+    this.seconds++;
+    this.display.textContent = this.seconds;
+  }
+  start() {
+    setInterval(this.tick.bind(this), 1000); // ✅ this locked to the stopwatch
+  }
+}
+const watch = new Stopwatch(document.querySelector('#watch'));
+watch.start();
+</script>
+      </div>
+      <aside class="why">
+        <div class="stage" id="stage-watch">
+          <span class="stage-label">Live page</span>
+          <div class="watch"><span class="watch-num" id="watch">0</span><span class="muted">seconds</span></div>
+        </div>
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step"><code>watch.start()</code>, so inside <code>start</code>, <span class="this-word">this</span> = the stopwatch. ✓</li>
+          <li class="step">The <code>function</code> you give to <code>setInterval</code> is not called by your object. The <b>timer</b> calls it.</li>
+          <li class="step">Timers call it with <span class="this-word">this</span> = <code>window</code>. So <code>window.seconds</code> becomes <code>NaN</code> and <code>window.display</code> is undefined.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> timers, <code>fetch().then</code>, <code>forEach</code>: if you hand over a callback, it gets someone else's <span class="this-word">this</span>. Use an arrow.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 4 -->
+<section class="slide bug" id="bug-4" data-title="Bug 4 · Method as event handler" data-part="3">
+  <div class="wrap">
+    <div class="bug-head">
+      <span class="bug-tag">BUG 04</span>
+      <h2>The Like button that crashes</h2>
+      <p class="symptom">Run it, then click 👍. You see: <code>TypeError: Cannot set properties of undefined (setting 'textContent')</code></p>
+    </div>
+    <div class="bug-grid">
+      <div class="runner" data-stage="#stage-like">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+class LikeButton {
+  constructor(button, counter) {
+    this.likes = 0;
+    this.counter = counter;
+    button.addEventListener('click', this.like); // ❌ handing the method over
+  }
+  like() {
+    console.log('like() this =', this);
+    this.likes++;
+    this.counter.textContent = this.likes;
+  }
+}
+new LikeButton(document.querySelector('#like-btn'),
+               document.querySelector('#like-count'));
+console.log('Ready. Click 👍 Like');
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: bind" data-kind="fix">
+class LikeButton {
+  constructor(button, counter) {
+    this.likes = 0;
+    this.counter = counter;
+    button.addEventListener('click', this.like.bind(this)); // ✅
+  }
+  like() {
+    console.log('like() this =', this);
+    this.likes++;
+    this.counter.textContent = this.likes;
+  }
+}
+new LikeButton(document.querySelector('#like-btn'),
+               document.querySelector('#like-count'));
+console.log('Ready. Click 👍 Like');
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: arrow wrapper" data-kind="fix">
+class LikeButton {
+  constructor(button, counter) {
+    this.likes = 0;
+    this.counter = counter;
+    button.addEventListener('click', () => this.like()); // ✅ we make the call, with a dot
+  }
+  like() {
+    console.log('like() this =', this);
+    this.likes++;
+    this.counter.textContent = this.likes;
+  }
+}
+new LikeButton(document.querySelector('#like-btn'),
+               document.querySelector('#like-count'));
+console.log('Ready. Click 👍 Like');
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: arrow class field" data-kind="fix">
+class LikeButton {
+  likes = 0;
+  constructor(button, counter) {
+    this.counter = counter;
+    button.addEventListener('click', this.like);
+  }
+  like = () => {                 // ✅ an arrow field: this locked to the instance
+    console.log('like() this =', this);
+    this.likes++;
+    this.counter.textContent = this.likes;
+  };
+}
+new LikeButton(document.querySelector('#like-btn'),
+               document.querySelector('#like-count'));
+console.log('Ready. Click 👍 Like');
+</script>
+      </div>
+      <aside class="why">
+        <div class="stage" id="stage-like">
+          <span class="stage-label">Live page</span>
+          <button class="live-btn" id="like-btn">👍 Like</button>
+          <span class="live-count" id="like-count">0</span>
+        </div>
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step"><code>this.like</code> has no <code>()</code>. You <b>hand over</b> the function; you don't call it.</li>
+          <li class="step">On click, the <b>browser</b> calls it, with <span class="this-word">this</span> = the clicked <b>element</b>.</li>
+          <li class="step"><code>button.counter</code> doesn't exist, so <code>undefined.textContent = …</code> crashes.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> passing <code>this.method</code> anywhere (listeners, timers, React <code>onClick</code>) loses <span class="this-word">this</span>. Bind it, wrap it, or use an arrow field.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 5 -->
+<section class="slide bug" id="bug-5" data-title="Bug 5 · Extracted method" data-part="3">
+  <div class="wrap">
+    <div class="bug-head">
+      <span class="bug-tag">BUG 05</span>
+      <h2>Pulling a method out of its object</h2>
+      <p class="symptom">You see: the first total works, then <code>TypeError: Cannot read properties of undefined (reading '<span class="only-module">items</span><span class="only-script">reduce</span>')</code></p>
+    </div>
+    <div class="bug-grid">
+      <div class="runner">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+const cart = {
+  items: [12, 30, 8],
+  getTotal() {
+    return this.items.reduce((sum, p) => sum + p, 0);
+  }
+};
+
+console.log(cart.getTotal()); // ✅ 50
+
+const { getTotal } = cart;    // looks harmless…
+console.log(getTotal());      // ❌
+</script>
+<script type="text/x-snippet" data-label="🐞 Same bug, as a callback" data-kind="bug">
+const cart = {
+  items: [12, 30, 8],
+  getTotal() {
+    return this.items.reduce((sum, p) => sum + p, 0);
+  }
+};
+
+function report(calc) {
+  console.log('Total is', calc()); // calc() — plain call
+}
+report(cart.getTotal); // ❌ passed without its object
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: keep the dot" data-kind="fix">
+const cart = {
+  items: [12, 30, 8],
+  getTotal() {
+    return this.items.reduce((sum, p) => sum + p, 0);
+  }
+};
+
+function report(calc) {
+  console.log('Total is', calc());
+}
+report(() => cart.getTotal()); // ✅ the call still has cart. in front
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: bind" data-kind="fix">
+const cart = {
+  items: [12, 30, 8],
+  getTotal() {
+    return this.items.reduce((sum, p) => sum + p, 0);
+  }
+};
+
+const getTotal = cart.getTotal.bind(cart); // ✅ locked to cart
+console.log(getTotal());
+</script>
+      </div>
+      <aside class="why">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step"><code>const { getTotal } = cart</code> copies <b>only the function</b>, not the object it was in.</li>
+          <li class="step"><code>getTotal()</code> has no dot, so it has no owner.</li>
+          <li class="step">Passing <code>cart.getTotal</code> to another function is the same thing: whoever calls it later does a plain <code>calc()</code>.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> a method only knows its object <b>at the moment you call it with a dot</b>. Copy it out and that's lost.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 6 -->
+<section class="slide bug" id="bug-6" data-title="Bug 6 · Arrow in a listener" data-part="3">
+  <div class="wrap">
+    <div class="bug-head">
+      <span class="bug-tag">BUG 06</span>
+      <h2>The arrow that can't find the button</h2>
+      <p class="symptom">Run it, then click a chip. You see: <code>TypeError: Cannot read properties of undefined (reading '<span class="only-module">classList</span><span class="only-script">toggle</span>')</code></p>
+    </div>
+    <div class="bug-grid">
+      <div class="runner" data-stage="#stage-chips">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+const chips = document.querySelectorAll('#stage-chips .chip');
+
+chips.forEach((chip) => {
+  chip.addEventListener('click', () => {
+    console.log('this =', this);
+    this.classList.toggle('on'); // ❌ an arrow: this is not the chip
+  });
+});
+console.log('Ready. Click a chip');
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: function" data-kind="fix">
+const chips = document.querySelectorAll('#stage-chips .chip');
+
+chips.forEach((chip) => {
+  chip.addEventListener('click', function () {
+    console.log('this =', this);
+    this.classList.toggle('on'); // ✅ the browser sets this = the chip
+  });
+});
+console.log('Ready. Click a chip');
+</script>
+<script type="text/x-snippet" data-label="✅ Better: event.currentTarget" data-kind="fix">
+const chips = document.querySelectorAll('#stage-chips .chip');
+
+chips.forEach((chip) => {
+  chip.addEventListener('click', (event) => {
+    event.currentTarget.classList.toggle('on'); // ✅ no this needed at all
+    console.log('clicked', event.currentTarget.textContent);
+  });
+});
+console.log('Ready. Click a chip');
+</script>
+      </div>
+      <aside class="why">
+        <div class="stage" id="stage-chips">
+          <span class="stage-label">Live page</span>
+          <button class="chip">HTML</button><button class="chip">CSS</button><button class="chip">JavaScript</button>
+        </div>
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">This is <b>Bug 1 the other way round</b>. Here we <i>want</i> the browser's <span class="this-word">this</span> (the element).</li>
+          <li class="step">The browser does pass the element as <span class="this-word">this</span>, but an arrow <b>ignores it</b> and uses the outer <span class="this-word">this</span>.</li>
+          <li class="step">The outer code is the top of the file, so <code>undefined</code> or <code>window</code>.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> in event handlers, prefer <code>event.currentTarget</code>. It works the same in arrows and functions.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 7 -->
+<section class="slide bug" id="bug-7" data-title="Bug 7 · bind + removeEventListener" data-part="3">
+  <div class="wrap">
+    <div class="bug-head">
+      <span class="bug-tag">BUG 07</span>
+      <h2>The listener that won't go away</h2>
+      <p class="symptom">Run it, click <b>Ping</b> a few times, click <b>Stop</b>, then click <b>Ping</b> again. It still pings. No error, just wrong.</p>
+    </div>
+    <div class="bug-grid">
+      <div class="runner" data-stage="#stage-ping">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+class Pinger {
+  constructor(button) {
+    this.count = 0;
+    this.button = button;
+    button.addEventListener('click', this.ping.bind(this));
+  }
+  ping() {
+    this.count++;
+    console.log(`ping #${this.count}`);
+  }
+  stop() {
+    this.button.removeEventListener('click', this.ping.bind(this)); // ❌ a NEW function
+    console.log('stopped… (really?)');
+  }
+}
+const pinger = new Pinger(document.querySelector('#ping-btn'));
+document.querySelector('#stop-btn').addEventListener('click', () => pinger.stop());
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: bind once, keep it" data-kind="fix">
+class Pinger {
+  constructor(button) {
+    this.count = 0;
+    this.button = button;
+    this.onPing = this.ping.bind(this); // ✅ one bound function, saved
+    button.addEventListener('click', this.onPing);
+  }
+  ping() {
+    this.count++;
+    console.log(`ping #${this.count}`);
+  }
+  stop() {
+    this.button.removeEventListener('click', this.onPing); // ✅ the same one
+    console.log('stopped ✔');
+  }
+}
+const pinger = new Pinger(document.querySelector('#ping-btn'));
+document.querySelector('#stop-btn').addEventListener('click', () => pinger.stop());
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: arrow field" data-kind="fix">
+class Pinger {
+  count = 0;
+  constructor(button) {
+    this.button = button;
+    button.addEventListener('click', this.ping);
+  }
+  ping = () => {               // ✅ one function per instance, this locked
+    this.count++;
+    console.log(`ping #${this.count}`);
+  };
+  stop() {
+    this.button.removeEventListener('click', this.ping);
+    console.log('stopped ✔');
+  }
+}
+const pinger = new Pinger(document.querySelector('#ping-btn'));
+document.querySelector('#stop-btn').addEventListener('click', () => pinger.stop());
+</script>
+<script type="text/x-snippet" data-label="🔍 Proof" data-kind="">
+function hello() {}
+const obj = {};
+console.log(hello.bind(obj) === hello.bind(obj)); // two different functions!
+</script>
+      </div>
+      <aside class="why">
+        <div class="stage" id="stage-ping">
+          <span class="stage-label">Live page</span>
+          <button class="live-btn" id="ping-btn">📣 Ping</button>
+          <button class="live-btn" id="stop-btn">✋ Stop listening</button>
+        </div>
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">Every <code>.bind()</code> call returns a <b>brand-new function</b>.</li>
+          <li class="step"><code>removeEventListener</code> only removes a listener if you pass the <b>exact same function</b> you added.</li>
+          <li class="step">So it finds nothing to remove and quietly does nothing. A memory leak waiting to happen.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> bind once and keep the result. Never bind inline if you'll need to remove it.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 8 -->
+<section class="slide bug" id="bug-8" data-title="Bug 8 · new & arguments" data-part="3">
+  <div class="wrap">
+    <div class="bug-head">
+      <span class="bug-tag">BUG 08</span>
+      <h2>Arrows aren't full functions</h2>
+      <p class="symptom">You see: <code>TypeError: Pet is not a constructor</code>, or a sum that comes out wrong</p>
+    </div>
+    <div class="bug-grid">
+      <div class="runner">
+<script type="text/x-snippet" data-label="🐞 new on an arrow" data-kind="bug">
+const Pet = (petName) => {
+  this.petName = petName;
+};
+
+const rex = new Pet('Rex'); // ❌
+console.log(rex.petName);
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: class" data-kind="fix">
+class Pet {
+  constructor(petName) {
+    this.petName = petName; // ✅ this = the new object
+  }
+}
+
+const rex = new Pet('Rex');
+console.log(rex.petName);
+</script>
+<script type="text/x-snippet" data-label="🐞 arguments in an arrow" data-kind="bug">
+function checkout(discount) {
+  const sumAll = () => {
+    let total = 0;
+    for (const n of arguments) total += n; // ❌ whose arguments?
+    return total;
+  };
+  return sumAll(10, 20, 30);
+}
+console.log(checkout(5)); // expected 60
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: rest parameters" data-kind="fix">
+function checkout(discount) {
+  const sumAll = (...nums) => { // ✅ a real array of the arrow's own args
+    let total = 0;
+    for (const n of nums) total += n;
+    return total;
+  };
+  return sumAll(10, 20, 30);
+}
+console.log(checkout(5));
+</script>
+      </div>
+      <aside class="why">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">An arrow has no <span class="this-word">this</span> of its own, so <code>new</code> has nothing to point at the new object. JavaScript refuses: <b>not a constructor</b>.</li>
+          <li class="step">An arrow also has no <code>arguments</code> of its own. It borrows the outer function's, so it sums <code>checkout(5)</code>'s arguments and gets <b>5</b>.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> build objects with <code>class</code>. Collect arguments with <code>...rest</code>. Don't use <code>arguments</code> in new code.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 9 -->
+<section class="slide bug" id="bug-9" data-title="Bug 9 · Returning an object" data-part="3">
+  <div class="wrap">
+    <div class="bug-head">
+      <span class="bug-tag">BUG 09</span>
+      <h2>The object that disappears</h2>
+      <p class="symptom">You see: <code>[undefined, undefined]</code>, or a <code>SyntaxError</code> with nothing run at all</p>
+    </div>
+    <div class="bug-grid">
+      <div class="runner">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+const names = ['mohammed', 'Omar'];
+
+const users = names.map((n) => { username: n }); // ❌
+console.log(users);
+</script>
+<script type="text/x-snippet" data-label="🐞 Two properties" data-kind="bug">
+const names = ['mohammed', 'Omar'];
+
+const users = names.map((n) => { username: n, role: 'student' }); // ❌
+console.log(users);
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: wrap in ( )" data-kind="fix">
+const names = ['mohammed', 'Omar'];
+
+const users = names.map((n) => ({ username: n, role: 'student' })); // ✅
+console.log(users);
+</script>
+      </div>
+      <aside class="why">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">Right after <span class="arrow-word">=&gt;</span>, a <code>{</code> means “function body starts”, <b>not</b> “object starts”.</li>
+          <li class="step">Then <code>username:</code> is read as a <b>label</b> (an old, rarely used JS feature). The body runs <code>n</code> and returns nothing, so you get <code>undefined</code>.</li>
+          <li class="step">With two properties, <code>, role:</code> isn't valid in a body, so you get a <b>SyntaxError</b>.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> to return an object from an arrow without <code>return</code>, wrap it: <code>=&gt; ({ … })</code>.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- BUG 10 -->
+<section class="slide bug" id="bug-10" data-title="Bug 10 · Hoisting" data-part="3">
+  <div class="wrap">
+    <div class="bug-head">
+      <span class="bug-tag">BUG 10</span>
+      <h2>“It worked before I made it an arrow”</h2>
+      <p class="symptom">You see: <code>ReferenceError: Cannot access 'sayBye' before initialization</code></p>
+    </div>
+    <div class="bug-grid">
+      <div class="runner">
+<script type="text/x-snippet" data-label="🐞 Bug" data-kind="bug">
+greet('mohammed');  // ✅ works
+sayBye('mohammed'); // ❌
+
+function greet(n) {
+  console.log(`Hi, ${n}`);
+}
+
+const sayBye = (n) => {
+  console.log(`Bye, ${n}`);
+};
+</script>
+<script type="text/x-snippet" data-label="✅ Fix: define first" data-kind="fix">
+function greet(n) {
+  console.log(`Hi, ${n}`);
+}
+
+const sayBye = (n) => {
+  console.log(`Bye, ${n}`);
+};
+
+greet('mohammed');
+sayBye('mohammed'); // ✅ defined above
+</script>
+      </div>
+      <aside class="why">
+        <h3>Why it happens</h3>
+        <ol>
+          <li class="step">A <code>function greet() {}</code> <b>declaration</b> is hoisted: the whole function exists from the first line.</li>
+          <li class="step"><code>const sayBye = () =&gt; {}</code> is a <b>variable</b>. It only gets its value when that line runs.</li>
+          <li class="step">Change a declaration into an arrow during a “cleanup” and every call above it breaks.</li>
+        </ol>
+        <p class="rule step"><b>Rule:</b> define arrow functions before you use them. If a helper is called from above, keep it a <code>function</code> declaration.</p>
+      </aside>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════ WRAP UP ═══════════════════════════════ -->
+
+<section class="slide" data-title="Debug checklist" data-part="3">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">When you see undefined, NaN or “Cannot read properties of undefined”</p>
+      <h2>The <span class="this-word">this</span> debugging checklist</h2>
+    </div>
+    <ol class="checklist">
+      <li class="step"><span>Add <code>console.log(this)</code> as the <b>first line</b> of the function. Trust what it prints, not what you expect.</span></li>
+      <li class="step"><span>Is the function a <code>function</code> or an <span class="arrow-word">=&gt;</span>?</span></li>
+      <li class="step"><span><b>Normal function:</b> find the <b>call</b>, the <code>()</code>. Left of the dot is <span class="this-word">this</span>. No <code>()</code> where you wrote it? Then <b>someone else calls it</b> (timer, listener, forEach), and they choose this.</span></li>
+      <li class="step"><span><b>Arrow:</b> look <b>outward</b>. What is <span class="this-word">this</span> in the function around it? An object literal <code>{ }</code> doesn't count.</span></li>
+      <li class="step"><span>Fix with: method shorthand for methods · arrows for inner callbacks · <code>bind</code> once (or an arrow field) for handlers · <code>event.currentTarget</code> for elements.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide" data-title="Final quiz: will it work?" data-part="3">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Final quiz · click to flip</p>
+      <h2>Will it work?</h2>
+    </div>
+    <div class="flips">
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 1</span><code class="hl">const counter = {
+  n: 0,
+  inc: () => this.n++,
+};
+counter.inc();</code></span>
+        <span class="face back"><span class="ans bad">✗ Broken</span><span class="exp">An arrow as a method doesn't get <code>counter</code> as this (Bug 1). Use <code>inc() { this.n++; }</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 2</span><code class="hl">btn.addEventListener('click', function () {
+  this.disabled = true;
+});</code></span>
+        <span class="face back"><span class="ans good">✓ Works</span><span class="exp">A normal function in a listener: this = btn.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 3</span><code class="hl">class Toast {
+  constructor() {
+    this.msg = 'Saved';
+    setTimeout(() => console.log(this.msg), 500);
+  }
+}</code></span>
+        <span class="face back"><span class="ans good">✓ Works</span><span class="exp">The arrow borrows the constructor's this, the new Toast.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 4</span><code class="hl">const { getTotal } = cart;
+getTotal();</code></span>
+        <span class="face back"><span class="ans bad">✗ Broken</span><span class="exp">The method was copied without its object (Bug 5).</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 5</span><code class="hl">ids.map((id) => { id: id });</code></span>
+        <span class="face back"><span class="ans bad">✗ Broken</span><span class="exp">Returns <code>undefined</code>s. <code>{</code> starts a body, not an object. Use <code>({ id })</code> (Bug 9).</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">Card 6</span><code class="hl">el.addEventListener('click', this.fn.bind(this));
+el.removeEventListener('click', this.fn.bind(this));</code></span>
+        <span class="face back"><span class="ans bad">✗ Broken</span><span class="exp">Two different bound functions, so nothing is removed (Bug 7).</span></span>
+      </span></button>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Cheat sheet" data-part="3">
+  <div class="wrap">
+    <div class="slide-head">
+      <p class="kicker">Take this home</p>
+      <h2>Cheat sheet</h2>
+    </div>
+    <div class="cols">
+      <div class="card">
+        <h3>Normal <code>function</code></h3>
+        <p><span class="this-word">this</span> = decided by the <b>call</b>.</p>
+        <p><code>obj.fn()</code> → obj · <code>fn()</code> → undefined/window · <code>fn.call(x)</code> → x · <code>new Fn()</code> → new object · listener → element</p>
+        <p class="muted">Use for: methods, constructors, listeners that need the element.</p>
+      </div>
+      <div class="card">
+        <h3>Arrow <code>=&gt;</code></h3>
+        <p><span class="this-word">this</span> = borrowed from <b>where it's written</b>. Can't be changed.</p>
+        <p>No <code>new</code>, no own <code>arguments</code>, <code>{</code> after <code>=&gt;</code> is a body.</p>
+        <p class="muted">Use for: callbacks inside methods, short helpers (map/filter), class field handlers.</p>
+      </div>
+    </div>
+    <div class="rule big">Before you write <span class="this-word">this</span>, ask: <i>“Who will call this function?”</i><small>If the answer is “not me, someone else later” (a timer, the browser, forEach, React), that's where the bug lives.</small></div>
+  </div>
+</section>
+
+</main>
+
+<div class="progress" aria-hidden="true"><div id="progress-bar"></div></div>
+<nav class="pager" aria-label="Slide navigation">
+  <button id="prev" aria-label="Previous">←</button>
+  <button id="next" aria-label="Next">→</button>
+</nav>
+
+<dialog id="overview" aria-label="All slides">
+  <div class="ov-head"><h2>All slides</h2><button class="btn btn-ghost ov-close">Close (O)</button></div>
+  <div class="ov-grid"></div>
+</dialog>
+
+<script src="js/common.js"></script>
+<script src="js/runner.js"></script>
+<script src="js/visuals.js"></script>
+<script src="js/deck.js"></script>
+</body>
+</html>

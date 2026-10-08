@@ -15,7 +15,7 @@ console.log("I am running!");
 // TODO 1: Log the exact text "Hello, JavaScript!"
 
 
-// TODO 2: Log your name. Text always goes inside quotes: "Sara"
+// TODO 2: Log your name. Text always goes inside quotes: "mohammed"
 
 
 // TODO 3: Log the number 7. Numbers do NOT get quotes.

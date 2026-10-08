@@ -9,7 +9,7 @@ console.log("I am running!");
 console.log("Hello, JavaScript!");
 
 // TODO 2
-console.log("Sara");
+console.log("mohammed");
 
 // TODO 3: no quotes, so this is a NUMBER. It shows in a different colour
 // from the string "7".
