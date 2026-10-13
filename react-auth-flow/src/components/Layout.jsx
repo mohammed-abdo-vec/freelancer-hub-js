@@ -1,14 +1,20 @@
+import { Suspense } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router';
 import { useIsAuthenticated } from '../store/authStore';
 import { useLogout, useMe } from '../features/auth/hooks';
 import { DebugPanel } from './DebugPanel';
+import { Spinner } from './Spinner';
 
 export function Layout() {
   return (
     <div className="app">
       <Navbar />
       <main className="container">
-        <Outlet />
+        {/* Pages are lazy-loaded (routes/index.jsx). While a page's JS file
+            downloads, its component "suspends" and this fallback shows. */}
+        <Suspense fallback={<Spinner label="Loading page…" />}>
+          <Outlet />
+        </Suspense>
       </main>
       <DebugPanel />
     </div>

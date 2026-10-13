@@ -28,8 +28,11 @@ export function RequireAuth() {
 
 export function GuestOnly() {
   const status = useAuthStatus();
+  const location = useLocation();
   if (status === 'checking') return <Spinner />;
-  if (status === 'authenticated') return <Navigate to="/dashboard" replace />;
+  // The moment login succeeds, status flips to 'authenticated' and THIS guard
+  // redirects — so it must also honour `state.from`, or /admin → login → /dashboard.
+  if (status === 'authenticated') return <Navigate to={location.state?.from?.pathname ?? '/dashboard'} replace />;
   return <Outlet />;
 }
 

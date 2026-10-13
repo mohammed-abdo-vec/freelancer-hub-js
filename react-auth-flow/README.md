@@ -75,7 +75,8 @@ On every refresh the server **rotates** the refresh token: the old one stops wor
 | [src/features/auth/hooks.js](src/features/auth/hooks.js) | `useMe` with `enabled`, mutations, `setQueryData` instead of refetching |
 | [src/components/AuthBootstrap.jsx](src/components/AuthBootstrap.jsx) | why the `checking` status exists |
 | [src/components/RouteGuards.jsx](src/components/RouteGuards.jsx) | `RequireAuth` (+ `state.from`), `GuestOnly`, `RequireRole` |
-| [src/App.jsx](src/App.jsx) | guards as nested layout routes |
+| [src/routes/index.jsx](src/routes/index.jsx) | route objects for `useRoutes`, guards as nested layout routes, `React.lazy` per page (one JS chunk each) |
+| [src/App.jsx](src/App.jsx) | `useRoutes(routes)`, and why a custom component can't sit inside `<Routes>` |
 | [src/features/notes/hooks.js](src/features/notes/hooks.js) | a protected feature with **zero** auth code in it |
 | [src/pages/*](src/pages/) | `isPending` / `isError` / `error` from mutations, `location.state.from` redirect |
 | [src/components/DebugPanel.jsx](src/components/DebugPanel.jsx) | classroom only, plus `useShallow` |
