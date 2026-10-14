@@ -1,0 +1,1367 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>الـ Auth في الفرونت إند</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="shared/css/deck.css">
+  <style>
+    /* إضافات خاصة بعرض الـ Auth */
+    /* خط عربي احتياطي داخل الكود والكونسول حتى لا تتباعد الحروف العربية */
+    :root { --mono: ui-monospace, "SF Mono", Menlo, "Cascadia Code", Consolas, "IBM Plex Sans Arabic", monospace; }
+    body[data-part="7"] { --accent: var(--p1); }
+    .ov-item[data-part="7"] { --c: var(--p1); }
+    .agenda.four { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+    @media (max-width: 900px) { .agenda.four { grid-template-columns: minmax(0, 1fr); } }
+    .agenda a.extra { border-top-style: dashed; }
+
+    /* التوكن الملوّن */
+    .jwt { direction: ltr; unicode-bidi: isolate; text-align: left; font-family: var(--mono); word-break: break-all;
+      background: var(--code-bg); color: var(--code-ink); border-radius: 12px; padding: 0.8rem 1rem; font-size: 1rem; line-height: 1.55; }
+    .jwt .h, .jwt-part.h b { color: #ff8a8a; }
+    .jwt .p, .jwt-part.p b { color: #c9a6ff; }
+    .jwt .s, .jwt-part.s b { color: #7dc8ff; }
+    .jwt .dot { color: #fff; font-weight: 900; }
+    .jwt-parts { direction: ltr; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.7rem; }
+    .jwt-part { background: var(--code-bg); color: var(--code-ink); border-radius: 12px; padding: 0.6rem 0.8rem; display: flex; flex-direction: column; gap: 0.35rem; }
+    .jwt-part b { font-family: var(--mono); font-size: 0.95rem; direction: ltr; text-align: left; }
+    .jwt-part p { direction: rtl; text-align: right; font-family: var(--sans); font-size: 0.82rem; color: #b8c0cc; }
+    .jwt-part code.hl { font-size: 0.78rem; white-space: pre-wrap; }
+
+    /* مخطط تسلسل أكثف للشرائح الطويلة */
+    .seq.dense { row-gap: 0.12rem; font-size: 0.8rem; padding-bottom: 0.6rem; }
+    .seq.dense .msg { min-height: 1.95rem; }
+    .seq.dense .note { margin: 0.1rem 0.3rem; padding: 0.1rem 0.55rem; font-size: 0.78rem; }
+
+    pre.code.small { font-size: 0.72rem; line-height: 1.42; padding: 0.5rem 0; }
+    .card pre.code { margin-top: 0.4rem; }
+    .card h3 .tag { vertical-align: middle; margin-inline-start: 0.3rem; }
+    .fix-line { margin-top: 0.45rem; font-size: 0.88rem; }
+    .fix-line b { color: var(--fix); }
+    .card p.sm, .sm { font-size: 0.9rem; }
+    .pros { list-style: none; padding: 0; margin: 0.4rem 0 0; display: flex; flex-direction: column; gap: 0.3rem; font-size: 0.9rem; }
+    .flow .fn { font-size: 0.88rem; }
+    .tight-diagram .fa { min-height: 1.6rem; }
+    .tight-diagram .fn { white-space: nowrap; }
+    .tight-diagram .fa:not(:empty) { min-height: 2rem; }
+    .cmd { direction: ltr; text-align: left; }
+    .big-q { font-size: clamp(2.5rem, 6vw, 5rem); font-weight: 900; color: var(--accent); }
+    .links { display: flex; gap: 0.7rem; flex-wrap: wrap; }
+    .links a { text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 0.5rem 1rem; box-shadow: var(--shadow); font-weight: 700; }
+    .links a:hover { border-color: var(--accent); color: var(--accent); }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-logo" viewBox="-11.5 -10.23 23 20.46" aria-hidden="true"><circle r="2.05" fill="#61dafb"/><g stroke="#61dafb" stroke-width="1" fill="none"><ellipse rx="11" ry="4.2"/><ellipse rx="11" ry="4.2" transform="rotate(60)"/><ellipse rx="11" ry="4.2" transform="rotate(120)"/></g></svg>
+    <a class="home brand-name" href="index.html">→ كل العروض</a>
+  </div>
+  <div class="part-label" id="part-label"></div>
+  <div class="controls">
+    <button class="icon-btn" id="overview-btn" title="كل الشرائح (O)" aria-label="كل الشرائح">☰</button>
+    <button class="icon-btn" id="theme-btn" title="فاتح / داكن (T)" aria-label="تبديل الثيم">◐</button>
+    <button class="icon-btn" id="fs-btn" title="ملء الشاشة (F)" aria-label="ملء الشاشة">⛶</button>
+    <span class="counter" id="counter"></span>
+  </div>
+</header>
+
+<main class="deck" id="deck">
+
+<!-- ===================================================================== -->
+<section class="slide title-slide" data-title="العنوان" data-part="0">
+  <div class="wrap">
+    <p class="kicker">React · الجلسة · المصادقة</p>
+    <h1>الـ <span class="react-word">Auth</span> في الفرونت إند</h1>
+    <p class="lead">كيف يعرف السيرفر من أنت مع كل طلب؟ أين نحفظ التوكن؟ وكيف يبقى المستخدم مسجّلًا بعد إعادة تحميل الصفحة، دون أن يلاحظ أي شيء؟</p>
+    <p class="hint">اضغط <kbd>←</kbd> للبدء · <kbd>O</kbd> كل الشرائح · <kbd>R</kbd> أعد تشغيل الكود · <kbd>T</kbd> الثيم · <kbd>F</kbd> ملء الشاشة</p>
+  </div>
+</section>
+
+<section class="slide" data-title="خطة الجلسة" data-part="0">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الخطة</p><h2>ماذا سنتعلم اليوم؟</h2></div>
+    <div class="agenda four">
+      <a href="#" data-goto="#part-1" style="--c: var(--p1)"><div class="num">١</div><h3>المفاهيم</h3><p>Authentication و Authorization، الـ 401 والـ 403، الـ sessions والـ JWT.</p></a>
+      <a href="#" data-goto="#part-2" style="--c: var(--p2)"><div class="num">٢</div><h3>التوكنات وأين نحفظها</h3><p>access و refresh، و localStorage أم الذاكرة أم الكوكي؟</p></a>
+      <a href="#" data-goto="#part-3" style="--c: var(--p3)"><div class="num">٣</div><h3>التدفق خطوة بخطوة</h3><p>الدخول، الطلبات، انتهاء التوكن، إعادة التحميل، الخروج.</p></a>
+      <a href="#" data-goto="#part-4" style="--c: var(--p4)"><div class="num">٤</div><h3>الكود</h3><p>الـ store، الـ interceptors، React Query، الـ bootstrap، الـ guards.</p></a>
+      <a href="#" data-goto="#part-5" style="--c: var(--p5)"><div class="num">٥</div><h3>جرّبها مباشرة</h3><p>تطبيق صغير يعمل هنا: توكن يعيش ١٠ ثوانٍ ثم يتجدد وحده.</p></a>
+      <a href="#" data-goto="#part-6" style="--c: var(--p6)"><div class="num">٦</div><h3>أخطاء شائعة</h3><p>ستة أخطاء نراها في المشاريع الحقيقية، وكيف نصلحها.</p></a>
+      <a href="#" data-goto="#part-7" style="--c: var(--p1)"><div class="num">٧</div><h3>الخلاصة</h3><p>قائمة مراجعة، وكيف تشغّل المشروع الحقيقي.</p></a>
+      <a class="extra" href="state.html" style="--c: var(--muted)"><div class="num">↗</div><h3>عروض مرتبطة</h3><p>الـ State و Zustand في <b>state.html</b>، والـ props والرندر في <b>props.html</b>.</p></a>
+    </div>
+    <p class="rule step">كل ما في هذا العرض مأخوذ من مشروع حقيقي يعمل: <code>react-auth-flow</code>. الشرائح تشرح الفكرة، والمشروع يريك نفس الكود في تطبيق كامل.</p>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="slide divider" id="part-1" data-title="الجزء ١ · المفاهيم" data-part="1">
+  <div class="wrap">
+    <div class="part-num">١</div>
+    <h1>المفاهيم</h1>
+    <p class="lead">قبل أي كود: ما الفرق بين "من أنت؟" و"هل مسموح لك؟"، ولماذا يجب أن نُثبت هويتنا مع كل طلب.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Authentication و Authorization" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">كلمتان متشابهتان، معنيان مختلفان</p><h2>من أنت؟ وهل مسموح لك؟</h2></div>
+    <div class="vs">
+      <div class="card accent">
+        <p class="big-emoji">🪪</p>
+        <h3>Authentication <span class="en">(المصادقة)</span></h3>
+        <p><b>"من أنت؟"</b> تُثبت هويتك: إيميل وكلمة مرور، ثم توكن مع كل طلب.</p>
+        <p class="muted sm">مثل جواز السفر في المطار: يثبت أنك أنت.</p>
+        <p class="sm" style="margin-top:0.6rem">إذا فشلت: <code>401 Unauthorized</code><br><span class="muted">"لا أعرفك. سجّل دخولك أو جدّد توكنك."</span></p>
+      </div>
+      <div class="vs-mid">ثم</div>
+      <div class="card accent">
+        <p class="big-emoji">🎫</p>
+        <h3>Authorization <span class="en">(الصلاحيات)</span></h3>
+        <p><b>"هل مسموح لك؟"</b> السيرفر يعرف من أنت، ويقرر هل دورك <span class="en">(role)</span> يسمح بهذا.</p>
+        <p class="muted sm">مثل بطاقة الصعود: ليست كل البوابات لك.</p>
+        <p class="sm" style="margin-top:0.6rem">إذا فشلت: <code>403 Forbidden</code><br><span class="muted">"أعرفك جيدًا، والجواب: لا."</span></p>
+      </div>
+    </div>
+    <div class="rule step">في المشروع: طالب يفتح <code>/admin</code> فيحصل على <b>403</b> لأنه مسجّل لكن دوره <code>student</code>. أما زائر بدون توكن فيحصل على <b>401</b>.
+      <small>الاسم الإنجليزي "Unauthorized" للـ 401 مضلّل قليلًا، فهو في الحقيقة يعني "غير مُصادَق".</small></div>
+  </div>
+</section>
+
+<section class="slide" data-title="HTTP لا يتذكر أحدًا" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">stateless</p><h2>السيرفر لا يتذكرك بين طلب وآخر</h2></div>
+    <div class="cols">
+      <div>
+        <ul class="points">
+          <li>كل طلب HTTP <b>مستقل تمامًا</b>. السيرفر لا يعرف أن هذا الطلب جاء من نفس الشخص الذي سجّل الدخول قبل دقيقة.</li>
+          <li class="step">لذلك يجب أن يحمل <b>كل طلب</b> دليلًا على هويتك: كوكي فيها رقم جلسة <span class="en">(session id)</span>، أو توكن في الـ header.</li>
+          <li class="step">تسجيل الدخول نفسه لا "يفتح" شيئًا على السيرفر. هو فقط <b>يعطيك هذا الدليل</b> لتستخدمه بعد ذلك.</li>
+        </ul>
+        <p class="rule step">الـ Auth في الفرونت إند = <b>أين نحفظ الدليل، وكيف نرسله، وماذا نفعل عندما ينتهي</b>.</p>
+      </div>
+      <div class="seq" data-lanes="2">
+        <div class="seq-head"><div>⚛️ تطبيق React</div><div>🖥️ السيرفر</div></div>
+        <div class="msg" data-from="1" data-to="2"><b>GET /api/notes</b><small>بدون أي دليل</small></div>
+        <div class="msg reply bad" data-from="2" data-to="1"><b>401</b><small>مين أنت؟</small></div>
+        <div class="seq-section">نفس الطلب، مع دليل</div>
+        <div class="msg step" data-from="1" data-to="2"><b>GET /api/notes</b><small>Authorization: Bearer eyJhb…</small></div>
+        <div class="note step" data-at="2">يتحقق من التوكن</div>
+        <div class="msg reply ok step" data-from="2" data-to="1"><b>200 [ ...notes ]</b><small>ملاحظاتك أنت فقط</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="Sessions أم Tokens" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">طريقتان لإثبات الهوية</p><h2>Session ID أم Token (JWT)؟</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>🍪 Session <span class="en">(stateful)</span></th><th>🎟️ Token / JWT <span class="en">(stateless)</span></th></tr></thead>
+        <tbody>
+          <tr><td>ماذا يأخذ المتصفح؟</td><td>رقم عشوائي فقط <code>sid=8f3a…</code></td><td>توكن يحمل المعلومات بداخله <code>{ sub, role, exp }</code></td></tr>
+          <tr class="step"><td>أين بيانات الجلسة؟</td><td>على السيرفر (ذاكرة أو قاعدة بيانات أو Redis)</td><td>داخل التوكن نفسه، موقّعة بسرّ لا يعرفه إلا السيرفر</td></tr>
+          <tr class="step"><td>كيف يتحقق السيرفر؟</td><td>يبحث عن الرقم في قاعدة البيانات</td><td>يتحقق من التوقيع فقط، بدون قاعدة بيانات</td></tr>
+          <tr class="step"><td>كيف يُرسل؟</td><td>كوكي، والمتصفح يرسلها تلقائيًا</td><td>غالبًا header: <code>Authorization: Bearer …</code></td></tr>
+          <tr class="step"><td>الإلغاء <span class="en">(logout)</span></td><td>✅ سهل: نحذف الجلسة من السيرفر</td><td>❌ صعب: التوكن صالح حتى ينتهي، لذلك نجعل عمره <b>قصيرًا</b></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="rule step">المشروع يجمع الاثنين: <b>access token</b> قصير (JWT) لكل الطلبات، و<b>refresh token</b> في كوكي، والسيرفر يحفظ رقمه <span class="en">(jti)</span> حتى يستطيع إلغاءه.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="تشريح الـ JWT" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">JSON Web Token</p><h2>ثلاثة أجزاء بينها نقاط</h2></div>
+    <div class="jwt"><span class="h">eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9</span><span class="dot">.</span><span class="p">eyJzdWIiOiJ1MSIsIm5hbWUiOiJTYXJhIiwicm9sZSI6InN0dWRlbnQiLCJpYXQiOjE3NjAwMDAwMDAsImV4cCI6MTc2MDAwMDAzMH0</span><span class="dot">.</span><span class="s">S1BbUAuY6NpN5My6GmWzGc-G8UZ2ByicDAFLOFD3Hlg</span></div>
+    <div class="jwt-parts">
+      <div class="jwt-part h step"><b>header</b><p>نوع التوكن وخوارزمية التوقيع.</p><code class="hl">{ "alg": "HS256", "typ": "JWT" }</code></div>
+      <div class="jwt-part p step"><b>payload</b><p>البيانات (claims): من أنت، دورك، متى ينتهي.</p><code class="hl">{
+  "sub": "u1",
+  "name": "Sara",
+  "role": "student",
+  "iat": 1760000000,
+  "exp": 1760000030
+}</code></div>
+      <div class="jwt-part s step"><b>signature</b><p>بصمة تُحسب من الجزأين الأولين + سرّ موجود على السيرفر فقط.</p><code class="hl">HMACSHA256(
+  header + "." + payload,
+  ACCESS_SECRET
+)</code></div>
+    </div>
+    <p class="rule step">الـ header والـ payload مجرد <b>base64url</b>، يعني ترميز وليس تشفير. أي شخص يستطيع قراءتهما. التوقيع فقط هو ما يمنع <b>تعديلهما</b>.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="جرّب: فك الـ JWT بنفسك" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب</p><h2>أي أحد يستطيع قراءة الـ payload</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>سطر واحد <code>atob</code> يكفي لقراءة ما في التوكن. لا مفتاح ولا سر.</li>
+          <li>الدرس: <b>لا تضع أسرارًا في الـ payload</b> (كلمة مرور، أرقام بطاقات…).</li>
+          <li>اضغط <b>"اجعلني admin"</b>: الـ payload تغيّر، لكن التوقيع بقي كما هو. السيرفر سيحسب التوقيع من جديد بسرّه، فلن يتطابق، ويرد بـ <b>401</b>.</li>
+          <li>الفرونت إند <b>لا يستطيع التحقق</b> من التوقيع (لا يعرف السر). يقرأ <code>exp</code> للعرض فقط، والقرار دائمًا للسيرفر.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="فك التوكن" data-kind="fix">
+const TOKEN =
+  'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9' +
+  '.eyJzdWIiOiJ1MSIsIm5hbWUiOiJTYXJhIiwicm9sZSI6InN0' +
+  'dWRlbnQiLCJpYXQiOjE3NjAwMDAwMDAsImV4cCI6MTc2MDAwMDAzMH0' +
+  '.S1BbUAuY6NpN5My6GmWzGc-G8UZ2ByicDAFLOFD3Hlg';
+
+// فك ترميز جزء من التوكن إلى object
+function decode(part) {
+  const b64 = part.replaceAll('-', '+').replaceAll('_', '/');
+  return JSON.parse(atob(b64));
+}
+// العكس: object إلى base64url (لنعدّل الـ payload)
+function encode(obj) {
+  return btoa(JSON.stringify(obj))
+    .replaceAll('+', '-').replaceAll('/', '_')
+    .replaceAll('=', '');
+}
+
+function App() {
+  const [token, setToken] = useState(TOKEN);
+  const [header, payload, signature] = token.split('.');
+  const data = decode(payload);
+  console.log('payload:', data);
+
+  const head = JSON.stringify(decode(header));
+  const exp = new Date(data.exp * 1000);
+  const sig = signature.slice(0, 16) + '…';
+
+  function becomeAdmin() {
+    const fake = encode({ ...data, role: 'admin' });
+    setToken([header, fake, signature].join('.'));
+  }
+  const reset = () => setToken(TOKEN);
+
+  return (
+    <div className="stack">
+      <div dir="ltr">
+        <p>header: <code>{head}</code></p>
+        <p>role: <b>{data.role}</b></p>
+        <p>exp: {exp.toLocaleString()}</p>
+        <p>signature: <code>{sig}</code></p>
+      </div>
+      <div className="row">
+        <button onClick={becomeAdmin}>😈 اجعلني admin</button>
+        <button onClick={reset}>↺ الأصلي</button>
+      </div>
+      {token !== TOKEN && (
+        <p className="error">
+          التوقيع لم يتغير ← السيرفر سيرفض هذا التوكن (401)
+        </p>
+      )}
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="slide divider" id="part-2" data-title="الجزء ٢ · التوكنات وأين نحفظها" data-part="2">
+  <div class="wrap">
+    <div class="part-num">٢</div>
+    <h1>التوكنات وأين نحفظها</h1>
+    <p class="lead">توكن واحد طويل العمر خطير، وتوكن قصير وحده مزعج. الحل: توكنان، ولكل واحد مكان.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Access token و Refresh token" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">التوكنان</p><h2>Access token و Refresh token</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th></th><th>🎟️ Access token</th><th>🔁 Refresh token</th></tr></thead>
+        <tbody>
+          <tr><td>العمر</td><td><b>قصير</b>: ٣٠ ثانية في المشروع (عادةً ٥–١٥ دقيقة)</td><td><b>طويل</b>: ٧ أيام</td></tr>
+          <tr class="step"><td>كيف يصل من السيرفر؟</td><td>في الـ JSON body للرد</td><td>كوكي <code>httpOnly</code> مع <code>path=/api/auth</code></td></tr>
+          <tr class="step"><td>أين يُحفظ في المتصفح؟</td><td>في Zustand، <b>في الذاكرة فقط</b></td><td>المتصفح يحفظه، و<b>JavaScript لا يستطيع قراءته</b></td></tr>
+          <tr class="step"><td>كيف يُرسل؟</td><td><code>Authorization: Bearer …</code> عبر interceptor</td><td>تلقائيًا من المتصفح، فقط إلى <code>/api/auth/*</code></td></tr>
+          <tr class="step"><td>لماذا نستخدمه؟</td><td>كل طلب API</td><td>شيء واحد فقط: الحصول على access token جديد</td></tr>
+          <tr class="step"><td>إذا سُرق؟</td><td>صالح لثوانٍ أو دقائق فقط</td><td>صالح <b>مرة واحدة</b>: كل refresh يُبدّله <span class="en">(rotation)</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="أين نحفظ التوكن؟" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">السؤال الأشهر في الـ Auth</p><h2>localStorage أم الذاكرة أم كوكي httpOnly؟</h2>
+      <p class="lead"><b>XSS</b> = سكربت غريب يعمل داخل صفحتك (مكتبة مخترقة، input غير منظّف). <b>CSRF</b> = موقع آخر يجعل متصفحك يرسل طلبًا لموقعك مع كوكيزك.</p></div>
+    <div class="grid-3">
+      <div class="card bad">
+        <h3>🗄️ localStorage</h3>
+        <ul class="pros">
+          <li>✅ يبقى بعد إعادة التحميل</li>
+          <li>✅ سهل جدًا: سطر واحد</li>
+          <li>❌ <b>أي سكربت XSS يقرؤه</b> ويرسله لنفسه</li>
+          <li>❌ يبقى صالحًا عند المهاجم حتى ينتهي</li>
+        </ul>
+        <p class="muted sm" style="margin-top:0.5rem">لا يُرسل تلقائيًا، فلا CSRF، لكن خطر XSS أكبر.</p>
+      </div>
+      <div class="card">
+        <h3>🧠 الذاكرة <span class="en">(Zustand)</span></h3>
+        <ul class="pros">
+          <li>✅ لا يُكتب في أي مكان يمكن سرقته لاحقًا</li>
+          <li>✅ لا CSRF (لا يُرسل تلقائيًا)</li>
+          <li>❌ <b>يضيع عند إعادة التحميل</b></li>
+          <li>⚠️ XSS ما زال يستطيع <b>استخدامه</b> أثناء فتح الصفحة</li>
+        </ul>
+        <p class="muted sm" style="margin-top:0.5rem">ممتاز للـ access token القصير.</p>
+      </div>
+      <div class="card good">
+        <h3>🍪 كوكي httpOnly</h3>
+        <ul class="pros">
+          <li>✅ <b>JavaScript لا يستطيع قراءتها</b>، فلا سرقة عبر XSS</li>
+          <li>✅ تبقى بعد إعادة التحميل</li>
+          <li>⚠️ تُرسل تلقائيًا، فتحتاج حماية CSRF: <code>sameSite</code></li>
+          <li>⚠️ لا نستطيع وضعها في header بأنفسنا</li>
+        </ul>
+        <p class="muted sm" style="margin-top:0.5rem">ممتازة للـ refresh token.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="اختيار المشروع" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">ماذا اختار المشروع؟</p><h2>access في الذاكرة + refresh في كوكي httpOnly</h2></div>
+    <div class="cols">
+      <div class="diagram">
+        <h3>المتصفح</h3>
+        <div class="grid-2">
+          <div class="fn store">📦 Zustand (الذاكرة)<small><code>accessToken: "eyJhb…"</code><br>يضيع مع reload، وهذا مقصود</small></div>
+          <div class="fn">🍪 Cookie jar<small><code>refresh_token</code> httpOnly<br>JS لا يراها أبدًا</small></div>
+        </div>
+        <div class="flow h" style="margin-top:0.6rem">
+          <div class="fn react">كل طلب API</div><div class="fa"><span>Bearer</span></div><div class="fn server">🖥️ السيرفر</div>
+        </div>
+        <div class="flow h">
+          <div class="fn react">POST /auth/refresh</div><div class="fa"><span>🍪 تلقائيًا</span></div><div class="fn server">🖥️ السيرفر</div>
+        </div>
+      </div>
+      <ul class="points">
+        <li class="step"><b>XSS</b> لا يستطيع سرقة الـ refresh token، والـ access token يعيش ثوانٍ فقط.</li>
+        <li class="step"><b>CSRF</b>: الكوكي <code>sameSite: 'strict'</code> فلا تُرسل من مواقع أخرى، و<code>path: '/api/auth'</code> فلا تُرسل مع باقي الطلبات.</li>
+        <li class="step"><b>Reload</b>: الذاكرة تُمسح، لكن الكوكي باقية. نطلب <code>/auth/refresh</code> ونحصل على access token جديد.</li>
+        <li class="step"><b>Rotation</b>: كل refresh يعطي كوكي جديدة ويُلغي القديمة. الكوكي المسروقة تصلح مرة واحدة فقط.</li>
+      </ul>
+    </div>
+    <p class="rule step">في <code>authStore</code> فقط <code>lastEmail</code> يذهب إلى localStorage. التوكن لا يلمس الـ storage أبدًا.</p>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="slide divider" id="part-3" data-title="الجزء ٣ · التدفق خطوة بخطوة" data-part="3">
+  <div class="wrap">
+    <div class="part-num">٣</div>
+    <h1>التدفق خطوة بخطوة</h1>
+    <p class="lead">من يكلّم من، وبأي ترتيب؟ الصورة الكاملة أولًا، ثم كل سيناريو وحده.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="الصورة الكاملة" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">دورة حياة الجلسة</p><h2>الصورة الكاملة في مخطط واحد</h2></div>
+    <div class="cols tight-diagram">
+      <div class="diagram">
+        <h3>١) عند فتح التطبيق (أو reload)</h3>
+        <div class="flow">
+          <div class="fn start">التطبيق يفتح</div>
+          <div class="fa"></div>
+          <div class="fn store"><code>status = 'checking'</code><small>نعرض spinner، بدون أي redirect</small></div>
+          <div class="fa"><code>POST /auth/refresh 🍪</code></div>
+          <div class="fn decision step">هل الكوكي صالحة؟</div>
+          <div class="fbranch step">
+            <div class="flow"><div class="fa yes"><span>نعم</span></div><div class="fn ok">'authenticated'<small>توكن جديد في الذاكرة</small></div><div class="fa"></div><div class="fn">الصفحة المطلوبة</div></div>
+            <div class="flow"><div class="fa no"><span>لا</span></div><div class="fn bad">'guest'</div><div class="fa"></div><div class="fn">صفحة <code>/login</code><small>بعد الدخول تصبح authenticated</small></div></div>
+          </div>
+        </div>
+      </div>
+      <div class="diagram">
+        <h3>٢) مع كل طلب محمي</h3>
+        <div class="flow">
+          <div class="fn start step">طلب API + Bearer</div>
+          <div class="fa step"></div>
+          <div class="fn decision step">هل قبل السيرفر التوكن؟</div>
+          <div class="fbranch step">
+            <div class="flow"><div class="fa yes"><span>نعم</span></div><div class="fn ok end">200 البيانات ✅</div></div>
+            <div class="flow"><div class="fa no"><span>401</span></div><div class="fn server">POST /auth/refresh 🍪</div><div class="fa"></div><div class="fn decision">نجح؟</div>
+              <div class="fbranch">
+                <div class="flow"><div class="fa yes"><span>نعم</span></div><div class="fn ok">نعيد الطلب<small>مرة واحدة</small></div></div>
+                <div class="flow"><div class="fa no"><span>لا</span></div><div class="fn bad">خروج محلي<small>ثم <code>/login</code></small></div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="(أ) تسجيل الدخول" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">السيناريو أ</p><h2>تسجيل الدخول</h2></div>
+    <div class="seq" data-lanes="4">
+      <div class="seq-head"><div>🧑 المستخدم</div><div>⚛️ React</div><div>📦 Zustand</div><div>🖥️ السيرفر</div></div>
+      <div class="msg step" data-from="1" data-to="2"><b>submit</b><small>يكتب الإيميل وكلمة المرور</small></div>
+      <div class="msg step" data-from="2" data-to="4"><b>POST /auth/login</b><small>الإيميل وكلمة المرور، عبر useLogin().mutate</small></div>
+      <div class="note step" data-at="4">يقارن كلمة المرور (bcrypt)</div>
+      <div class="msg reply ok step" data-from="4" data-to="2"><b>200 { accessToken, user }</b><small>+ Set-Cookie: refresh_token (httpOnly)</small></div>
+      <div class="note step" data-at="2-4">🍪 المتصفح يحفظ الكوكي وحده. كود React لا يراها ولا يحتاجها</div>
+      <div class="msg step" data-from="2" data-to="3"><b>setSession(data)</b><small>التوكن في الذاكرة</small></div>
+      <div class="note store step" data-at="3">status: 'authenticated'</div>
+      <div class="note step" data-at="2">setQueryData(['auth','me'], user)</div>
+      <div class="msg reply ok step" data-from="2" data-to="1"><b>navigate(from)</b><small>يعود للصفحة التي أرادها، أو للـ dashboard</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="(ب) طلب محمي مع Bearer" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">السيناريو ب</p><h2>طلب عادي والتوكن صالح</h2></div>
+    <div class="seq" data-lanes="4">
+      <div class="seq-head"><div>⚛️ الكومبوننت</div><div>🔌 http.js (axios)</div><div>📦 Zustand</div><div>🖥️ السيرفر</div></div>
+      <div class="msg step" data-from="1" data-to="2"><b>useNotes(): GET /notes</b><small>الكومبوننت لا يعرف شيئًا عن التوكن</small></div>
+      <div class="msg step" data-from="2" data-to="3"><b>getState().accessToken</b><small>request interceptor</small></div>
+      <div class="msg reply step" data-from="3" data-to="2"><b>"eyJhb…"</b></div>
+      <div class="note step" data-at="2">يضيف الـ header: <code>Bearer eyJhb…</code></div>
+      <div class="msg step" data-from="2" data-to="4"><b>GET /api/notes</b><small>Authorization: Bearer eyJhb…</small></div>
+      <div class="note step" data-at="4">يتحقق بـ <code>jwt.verify</code> ✓</div>
+      <div class="msg reply ok step" data-from="4" data-to="2"><b>200 [ ...notes ]</b></div>
+      <div class="msg reply ok step" data-from="2" data-to="1"><b>data</b><small>رندر الملاحظات</small></div>
+    </div>
+    <p class="rule step">نقرأ التوكن بـ <code>getState()</code> وليس بـ hook: الـ interceptor ليس كومبوننت، ولا نريد أي re-render هنا.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="(ج) التوكن انتهى ← refresh ← retry" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">السيناريو ج · الـ silent refresh</p><h2>التوكن انتهى: 401 ثم refresh ثم إعادة الطلب</h2></div>
+    <div class="seq dense" data-lanes="4">
+      <div class="seq-head"><div>⚛️ الكومبوننت</div><div>🔌 http.js (axios)</div><div>📦 Zustand</div><div>🖥️ السيرفر</div></div>
+      <div class="msg" data-from="1" data-to="2"><b>GET /notes</b></div>
+      <div class="msg step" data-from="2" data-to="4"><b>GET /api/notes</b><small>مع Bearer (التوكن القديم)</small></div>
+      <div class="msg reply bad step" data-from="4" data-to="2"><b>401 Access token expired</b></div>
+      <div class="note step" data-at="2">الـ interceptor يرى 401 لأول مرة، فيضع <code>_retry = true</code></div>
+      <div class="msg step" data-from="2" data-to="4"><b>POST /auth/refresh</b><small>🍪 المتصفح يرسل الكوكي تلقائيًا</small></div>
+      <div class="note step" data-at="4">يلغي الكوكي القديمة ويصدر جديدة (rotation)</div>
+      <div class="msg reply ok step" data-from="4" data-to="2"><b>200 { accessToken }</b><small>مع Set-Cookie جديدة</small></div>
+      <div class="msg step" data-from="2" data-to="3"><b>setSession(data)</b><small>التوكن الجديد</small></div>
+      <div class="msg step" data-from="2" data-to="4"><b>GET /api/notes</b><small>مرة ثانية، مع Bearer (التوكن الجديد)</small></div>
+      <div class="msg reply ok step" data-from="4" data-to="2"><b>200 [ ...notes ]</b></div>
+      <div class="msg reply ok step" data-from="2" data-to="1"><b>data</b><small>الكومبوننت لم يلاحظ شيئًا 🎉</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="(د) إعادة تحميل الصفحة" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">السيناريو د · AuthBootstrap</p><h2>المستخدم ضغط Reload: الذاكرة فارغة، فماذا نفعل؟</h2></div>
+    <div class="seq dense" data-lanes="4">
+      <div class="seq-head"><div>🧑 المستخدم</div><div>⚛️ React</div><div>📦 Zustand</div><div>🖥️ السيرفر</div></div>
+      <div class="msg" data-from="1" data-to="2"><b>F5 / reload</b><small>وهو في صفحة الملاحظات</small></div>
+      <div class="note store step" data-at="3">accessToken: null · status: 'checking'</div>
+      <div class="note step" data-at="2">الـ AuthBootstrap يعرض spinner، ولا redirect بعد</div>
+      <div class="msg step" data-from="2" data-to="4"><b>POST /auth/refresh</b><small>🍪 الكوكي ما زالت في المتصفح</small></div>
+      <div class="seq-section step">الحالة ١: الكوكي صالحة</div>
+      <div class="msg reply ok step" data-from="4" data-to="2"><b>200 { accessToken }</b></div>
+      <div class="msg step" data-from="2" data-to="3"><b>setSession(data)</b><small>'authenticated'</small></div>
+      <div class="msg reply ok step" data-from="2" data-to="1"><b>/notes</b><small>نفس الصفحة، كأن شيئًا لم يحدث</small></div>
+      <div class="seq-section step">الحالة ٢: لا كوكي، أو انتهت (٧ أيام)، أو أُلغيت</div>
+      <div class="msg reply bad step" data-from="4" data-to="2"><b>401</b></div>
+      <div class="msg step" data-from="2" data-to="3"><b>clearSession()</b><small>'guest'</small></div>
+      <div class="msg reply bad step" data-from="2" data-to="1"><b>Navigate → /login</b><small>ومعه state.from = /notes</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="(هـ) تسجيل الخروج" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">السيناريو هـ</p><h2>تسجيل الخروج: السيرفر + الذاكرة + الكاش</h2></div>
+    <div class="seq" data-lanes="4">
+      <div class="seq-head"><div>🧑 المستخدم</div><div>⚛️ React</div><div>📦 Zustand</div><div>🖥️ السيرفر</div></div>
+      <div class="msg step" data-from="1" data-to="2"><b>click</b><small>زر الخروج: useLogout().mutate()</small></div>
+      <div class="msg step" data-from="2" data-to="4"><b>POST /auth/logout</b><small>🍪 مع الكوكي</small></div>
+      <div class="note step" data-at="4">يحذف الـ jti: الـ refresh token أصبح ميتًا</div>
+      <div class="msg reply step" data-from="4" data-to="2"><b>204</b><small>ويمسح الكوكي</small></div>
+      <div class="note step" data-at="2">في <code>onSettled</code>: نجح الطلب أو فشل، نُخرج المستخدم محليًا</div>
+      <div class="msg step" data-from="2" data-to="3"><b>clearSession()</b><small>'guest' · accessToken: null</small></div>
+      <div class="note bad step" data-at="2">نمسح الكاش: <code>queryClient.clear()</code></div>
+      <div class="msg reply step" data-from="2" data-to="1"><b>/login</b><small>الـ RequireAuth يرى 'guest'</small></div>
+    </div>
+    <p class="rule step">بدون <code>queryClient.clear()</code> سيرى المستخدم التالي على نفس الجهاز ملاحظات المستخدم السابق للحظة. سنرى هذا في الأخطاء الشائعة.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="(و) فشل الـ refresh" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">السيناريو و</p><h2>الـ refresh نفسه فشل: الجلسة انتهت فعلًا</h2></div>
+    <div class="seq" data-lanes="4">
+      <div class="seq-head"><div>⚛️ الكومبوننت</div><div>🔌 http.js (axios)</div><div>📦 Zustand</div><div>🖥️ السيرفر</div></div>
+      <div class="msg" data-from="2" data-to="4"><b>GET /api/notes</b><small>مع Bearer منتهٍ</small></div>
+      <div class="msg reply bad" data-from="4" data-to="2"><b>401</b></div>
+      <div class="msg step" data-from="2" data-to="4"><b>POST /auth/refresh</b><small>🍪 كوكي ملغاة أو منتهية</small></div>
+      <div class="msg reply bad step" data-from="4" data-to="2"><b>401 Session expired</b><small>ويمسح الكوكي</small></div>
+      <div class="note bad step" data-at="2">endSessionLocally()</div>
+      <div class="msg step" data-from="2" data-to="3"><b>clearSession()</b><small>'guest' + queryClient.clear()</small></div>
+      <div class="msg reply bad step" data-from="2" data-to="1"><b>reject(error)</b></div>
+      <div class="note step" data-at="1">الـ RequireAuth يرى 'guest' فيحوّل إلى <code>/login</code></div>
+    </div>
+    <p class="rule step">لا نعيد المحاولة مرة ثالثة: علم <code>_retry</code> وتجاهل أخطاء <code>/auth/*</code> يمنعان الحلقة اللانهائية refresh ← 401 ← refresh…</p>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="slide divider" id="part-4" data-title="الجزء ٤ · الكود" data-part="4">
+  <div class="wrap">
+    <div class="part-num">٤</div>
+    <h1>الكود</h1>
+    <p class="lead">نفس الملفات في <code>react-auth-flow</code>، مختصرة وبتعليقات عربية. خمسة ملفات صغيرة تصنع التدفق كله.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="authStore: الحالة والتوكن" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">src/store/authStore.js</p><h2>الـ store: من أنا، وبأي توكن؟</h2></div>
+    <div class="cols cols-40">
+      <ul class="points">
+        <li>ثلاث حالات فقط: <code>'checking'</code> و<code>'authenticated'</code> و<code>'guest'</code>.</li>
+        <li class="step">نبدأ بـ <code>'checking'</code> وليس <code>'guest'</code>، لأننا لا نعرف بعد. (هذا يمنع وميض صفحة الدخول.)</li>
+        <li class="step"><code>partialize</code> يحدد ما يذهب إلى localStorage: <b>فقط</b> <code>lastEmail</code>. التوكن يبقى في الذاكرة.</li>
+        <li class="step"><b>المستخدم ليس هنا!</b> هو بيانات سيرفر، يأتي من <code>GET /me</code> عبر React Query. لكل معلومة مصدر واحد.</li>
+        <li class="step muted sm">شرح Zustand و selectors بالتفصيل في <a href="state.html">state.html</a>.</li>
+      </ul>
+      <script type="text/x-code">
+export const useAuthStore = create(
+  persist(
+    (set) => ({
+      // 'checking' | 'authenticated' | 'guest'
+      status: 'checking',
+      accessToken: null, // في الذاكرة فقط
+      expiresAt: null,
+      lastEmail: '', // لا ضرر من حفظه
+
+      setSession: ({ accessToken, expiresAt }) => set({
+        status: 'authenticated', accessToken, expiresAt,
+      }),
+      clearSession: () => set({
+        status: 'guest', accessToken: null, expiresAt: null,
+      }),
+    }),
+    {
+      name: 'auth-prefs',
+      // ✅ فقط lastEmail يُحفظ في localStorage
+      partialize: (s) => ({ lastEmail: s.lastEmail }),
+    },
+  ),
+);
+      </script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="http.js: الـ request interceptor و refreshSession" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">src/lib/http.js · ١</p><h2>إضافة التوكن، و refresh واحد فقط في نفس الوقت</h2></div>
+    <div class="cols">
+      <div>
+        <script type="text/x-code" data-class="small">
+export const http = axios.create({
+  baseURL: '/api',
+  withCredentials: true, // أرسل الكوكيز (الـ refresh)
+});
+
+// أولًا: أضف التوكن لكل طلب
+http.interceptors.request.use((config) => {
+  // نقرأ الـ store خارج React بدون hook
+  const { accessToken } = useAuthStore.getState();
+  if (accessToken) {
+    config.headers.Authorization = `Bearer ${accessToken}`;
+  }
+  return config;
+});
+        </script>
+        <p class="rule step" style="margin-top:0.8rem">الكومبوننتات لا تلمس التوكن أبدًا. تستدعي <code>useNotes()</code> فتصلها الملاحظات.</p>
+      </div>
+      <div>
+        <script type="text/x-code" data-class="small">
+let refreshPromise = null; // الـ refresh الجاري (إن وجد)
+
+export function refreshSession() {
+  if (!refreshPromise) { // ✅ لا refresh جارٍ؟ ابدأ واحدًا
+    refreshPromise = http
+      .post('/auth/refresh') // الكوكي تُرسل تلقائيًا
+      .then(({ data }) => {
+        useAuthStore.getState().setSession(data);
+        queryClient.setQueryData(['auth', 'me'], data.user);
+        return data;
+      })
+      .finally(() => {
+        refreshPromise = null; // جاهز للمرة القادمة
+      });
+  }
+  return refreshPromise; // الكل ينتظر نفس الـ promise
+}
+        </script>
+        <p class="rule step" style="margin-top:0.8rem">لماذا الـ promise المشترك؟ لأن السيرفر يبدّل الكوكي مع كل refresh. التفاصيل بعد شريحتين.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="http.js: 401 ← refresh ← retry" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">src/lib/http.js · ٢</p><h2>الـ response interceptor: قلب التدفق كله</h2></div>
+    <div class="cols cols-60">
+      <script type="text/x-code">
+http.interceptors.response.use(
+  (response) => response, // نجح؟ مرّره كما هو
+  async (error) => {
+    const original = error.config;
+    const status = error.response?.status;
+    const isAuthEndpoint = original?.url?.startsWith('/auth/');
+
+    // ليس 401، أو طلب auth، أو أعدناه من قبل؟ ← يفشل
+    if (status !== 401 || isAuthEndpoint || original._retry) {
+      return Promise.reject(error);
+    }
+    original._retry = true; // مرة واحدة فقط، بلا حلقات
+
+    try {
+      await refreshSession();
+      return http(original); // ✅ بالتوكن الجديد
+    } catch (refreshError) {
+      endSessionLocally(); // امسح الـ store والكاش
+      return Promise.reject(refreshError);
+    }
+  },
+);
+      </script>
+      <ul class="points">
+        <li class="step"><b>الشرط الأول:</b> نتدخل فقط في <b>401</b>. الـ 403 أو 500 ليست مشكلة توكن.</li>
+        <li class="step"><code>isAuthEndpoint</code>: إذا فشل <code>/auth/refresh</code> نفسه بـ 401، لا نحاول refresh له!</li>
+        <li class="step"><code>_retry</code>: علم نضعه على الطلب نفسه. إذا فشل بعد الإعادة، نستسلم.</li>
+        <li class="step"><code>http(original)</code>: يمر من جديد على الـ request interceptor، فيأخذ التوكن الجديد من الـ store.</li>
+        <li class="step">فشل الـ refresh = الجلسة انتهت حقًا: نمسح الـ store <b>والكاش</b>، والـ guards تنقل المستخدم إلى <code>/login</code>.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="سباق الـ refresh" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">لماذا refresh واحد فقط؟</p><h2>طلبان فشلا بـ 401 في نفس اللحظة</h2>
+      <p class="lead">الصفحة تطلب <code>/me</code> و<code>/notes</code> معًا، والتوكن انتهى. الاثنان يحصلان على 401 في نفس اللحظة.</p></div>
+    <div class="cols">
+      <div class="seq dense" data-lanes="3">
+        <div class="seq-head"><div>📄 طلب A</div><div>📄 طلب B</div><div>🖥️ السيرفر</div></div>
+        <div class="seq-section" style="color:var(--bug)">❌ كل طلب يعمل refresh خاص به</div>
+        <div class="msg step" data-from="1" data-to="3"><b>POST /auth/refresh</b><small>🍪 الكوكي رقم ١</small></div>
+        <div class="msg step" data-from="2" data-to="3"><b>POST /auth/refresh</b><small>🍪 نفس الكوكي رقم ١</small></div>
+        <div class="msg reply ok step" data-from="3" data-to="1"><b>200</b><small>كوكي رقم ٢، ورقم ١ أُلغيت</small></div>
+        <div class="msg reply bad step" data-from="3" data-to="2"><b>401</b><small>رقم ١ لم تعد صالحة!</small></div>
+        <div class="note bad step" data-at="1-3">الطلب B يظن أن الجلسة انتهت، فيخرج المستخدم 😱</div>
+      </div>
+      <div class="seq dense" data-lanes="3">
+        <div class="seq-head"><div>📄 طلب A</div><div>📄 طلب B</div><div>🖥️ السيرفر</div></div>
+        <div class="seq-section" style="color:var(--fix)">✅ refreshPromise مشترك (single-flight)</div>
+        <div class="note step" data-at="1">ينشئ refreshPromise</div>
+        <div class="note step" data-at="2">يجده موجودًا، فينتظره</div>
+        <div class="msg step" data-from="1" data-to="3"><b>POST /auth/refresh</b><small>طلب واحد فقط</small></div>
+        <div class="msg reply ok step" data-from="3" data-to="1"><b>200</b><small>توكن جديد وكوكي رقم ٢</small></div>
+        <div class="note ok step" data-at="1-2">الاثنان يأخذان نفس التوكن ويعيدان طلبهما ✅</div>
+      </div>
+    </div>
+    <p class="rule step">نفس المشكلة تحدث في <code>StrictMode</code>: الـ effect في <code>AuthBootstrap</code> يعمل مرتين، لكن الـ promise المشترك يجعلهما طلبًا واحدًا.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="useLogin مع React Query" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">src/features/auth/hooks.js · LoginPage.jsx</p><h2>الدخول mutation، والمستخدم query</h2></div>
+    <div class="cols">
+      <div>
+        <script type="text/x-code" data-class="small">
+export function useLogin() {
+  const queryClient = useQueryClient();
+  const setSession = useAuthStore((s) => s.setSession);
+  return useMutation({
+    mutationFn: authApi.login, // POST /auth/login
+    onSuccess: (data) => {
+      setSession(data); // التوكن ← Zustand
+      // المستخدم ← الكاش (بدون طلب /me إضافي)
+      queryClient.setQueryData(['auth', 'me'], data.user);
+    },
+  });
+}
+
+export function useMe() {
+  const isAuthenticated = useIsAuthenticated();
+  return useQuery({
+    queryKey: ['auth', 'me'],
+    queryFn: authApi.me, // GET /me
+    enabled: isAuthenticated, // الضيف ليس له "me"
+  });
+}
+        </script>
+      </div>
+      <div>
+        <script type="text/x-code" data-class="small">
+// LoginPage.jsx
+const from = location.state?.from?.pathname ?? '/dashboard';
+
+const handleSubmit = (e) => {
+  e.preventDefault();
+  login.mutate(
+    { email, password },
+    { onSuccess: () => navigate(from, { replace: true }) },
+  );
+};
+
+// في الـ JSX: الحالة جاهزة من useMutation
+{login.isError && <p>{getErrorMessage(login.error)}</p>}
+<button disabled={login.isPending}>Log in</button>
+        </script>
+        <ul class="points tight" style="margin-top:0.7rem">
+          <li class="step">عالمان: <b>Zustand</b> للتوكن (حالة يملكها العميل)، و<b>React Query</b> للمستخدم (بيانات يملكها السيرفر).</li>
+          <li class="step"><code>setQueryData</code>: الرد فيه <code>user</code> أصلًا، فلا داعي لطلب <code>/me</code> مرة أخرى.</li>
+          <li class="step"><code>from</code>: إذا جاء من <code>/admin</code> يعود إليها بعد الدخول.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="AuthBootstrap" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">src/components/AuthBootstrap.jsx</p><h2>عند فتح التطبيق: "هل ما زالت عندي جلسة؟"</h2></div>
+    <div class="cols cols-60">
+      <div>
+        <script type="text/x-code">
+export function AuthBootstrap({ children }) {
+  const status = useAuthStatus();
+
+  useEffect(() => {
+    // مرة واحدة: الكوكي ما زالت في المتصفح؟
+    refreshSession().catch(() =>
+      useAuthStore.getState().clearSession(),
+    );
+  }, []);
+
+  if (status === 'checking') {
+    return <Spinner full label="Restoring your session…" />;
+  }
+  return children;
+}
+
+// main.jsx
+<AuthBootstrap>
+  <App />
+</AuthBootstrap>
+        </script>
+      </div>
+      <ul class="points">
+        <li class="step">الذاكرة مُسحت مع الـ reload، لكن كوكي الـ refresh باقية. نسأل السيرفر بـ <code>refreshSession()</code>.</li>
+        <li class="step">نجح؟ <code>setSession</code> داخل <code>refreshSession</code> يجعل الحالة <code>'authenticated'</code>.</li>
+        <li class="step">فشل؟ <code>clearSession()</code> ← <code>'guest'</code>.</li>
+        <li class="step"><b>حتى يصل الجواب</b> نعرض spinner. لو بدأنا بـ <code>'guest'</code> لنقلنا المستخدم المسجّل إلى <code>/login</code> لنصف ثانية ثم أعدناه. 😵</li>
+        <li class="step">نستخدم نفس <code>refreshSession</code> المشتركة، فحتى لو عمل الـ effect مرتين في StrictMode يخرج طلب واحد.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="الـ route guards: مخطط القرار" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">src/components/RouteGuards.jsx</p><h2>ماذا يرى المستخدم عندما يفتح <code>/admin</code>؟</h2></div>
+    <div class="cols cols-60">
+      <div class="diagram tight-diagram">
+        <div class="flow">
+          <div class="fn start">فتح صفحة admin</div>
+          <div class="fa"><span>RequireAuth</span></div>
+          <div class="fn decision">ما قيمة status؟</div>
+          <div class="fbranch three">
+            <div class="flow step"><div class="fa"><span>checking</span></div><div class="fn muted-node">⏳ Spinner<small>ننتظر الجواب</small></div></div>
+            <div class="flow step"><div class="fa no"><span>guest</span></div><div class="fn bad">تحويل إلى <code>/login</code><small>ومعه state.from</small></div></div>
+            <div class="flow step"><div class="fa yes"><span>authenticated</span></div><div class="fn decision">هل الدور admin؟<small>RequireRole</small></div>
+              <div class="fbranch">
+                <div class="flow"><div class="fa yes"><span>نعم</span></div><div class="fn ok">الصفحة<small><code>&lt;Outlet /&gt;</code></small></div></div>
+                <div class="flow"><div class="fa no"><span>لا</span></div><div class="fn bad">صفحة 403</div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="stack" style="display:flex;flex-direction:column;gap:0.8rem">
+        <p class="rule big step">الـ guards للتجربة <span class="en">(UX)</span>، وليست للأمان.</p>
+        <ul class="points step">
+          <li>أي شخص يستطيع تعديل الـ JS في متصفحه وتجاوز <code>RequireRole</code>.</li>
+          <li>سيرى شكل الصفحة فارغًا، لكن السيرفر يرد على <code>/api/admin/stats</code> بـ <b>403</b>.</li>
+          <li><b>الحماية الحقيقية</b> = <code>requireAuth</code> و<code>requireRole</code> على السيرفر.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="الـ route guards: الكود" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">RouteGuards.jsx · routes/index.jsx</p><h2>الـ guards هي layout routes تعرض <code>&lt;Outlet /&gt;</code> أو تحوّل</h2></div>
+    <div class="cols">
+      <script type="text/x-code" data-class="small">
+export function RequireAuth() {
+  const status = useAuthStatus();
+  const location = useLocation();
+
+  if (status === 'checking') return <Spinner />;
+  if (status === 'guest') {
+    // نتذكر أين كان ذاهبًا لنعيده بعد الدخول
+    return <Navigate to="/login" replace
+      state={{ from: location }} />;
+  }
+  return <Outlet />; // الصفحة المحمية
+}
+
+export function RequireRole({ role }) {
+  const { data: user, isPending } = useMe();
+  if (isPending) return <Spinner />;
+  if (user?.role !== role) return <Forbidden />; // 403
+  return <Outlet />;
+}
+      </script>
+      <div>
+        <script type="text/x-code" data-class="small">
+export const routes = [{
+  element: <Layout />,
+  children: [
+    { index: true, element: <HomePage /> },
+    { element: <GuestOnly />, children: [ // للضيوف فقط
+      { path: 'login', element: <LoginPage /> },
+    ]},
+    { element: <RequireAuth />, children: [ // للمسجلين
+      { path: 'dashboard', element: <DashboardPage /> },
+      { element: <RequireRole role="admin" />, children: [
+        { path: 'admin', element: <AdminPage /> },
+      ]},
+    ]},
+  ],
+}];
+        </script>
+        <ul class="points tight" style="margin-top:0.7rem">
+          <li class="step"><code>GuestOnly</code> عكس <code>RequireAuth</code>: المسجّل لا يرى صفحة الدخول، ويُحوَّل إلى <code>state.from</code> أو <code>/dashboard</code>.</li>
+          <li class="step">الصفحات نفسها لا تحتوي أي كود auth. الحماية كلها في شجرة الـ routes.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="slide divider" id="part-5" data-title="الجزء ٥ · جرّبها مباشرة" data-part="5">
+  <div class="wrap">
+    <div class="part-num">٥</div>
+    <h1>جرّبها مباشرة</h1>
+    <p class="lead">تطبيق صغير يعمل هنا في الصفحة: store مثل Zustand، وسيرفر وهمي، وتوكن يعيش <b>١٠ ثوانٍ</b> فقط حتى نرى انتهاءه أمامنا.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="جرّب: الـ silent refresh" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب · ١</p><h2>دخول، ثم انتظر انتهاء التوكن وراقب الكونسول</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>اضغط <b>دخول</b> (الحساب معبأ: sara@demo.dev / 123456).</li>
+          <li>الصفحة تطلب <code>/me</code> كل ٤ ثوانٍ (مثل <code>refetchInterval</code>).</li>
+          <li>راقب العداد: عندما يصل إلى <b>صفر</b> يرد السيرفر بـ 401، فيعمل <code>apiCall</code> refresh ويعيد الطلب. المستخدم لا يلاحظ شيئًا.</li>
+          <li>لاحظ أن الكوكي 🍪 تتغير مع كل refresh (rotation).</li>
+          <li>ثم افتح تبويب <b>🐞 بدون refresh</b>: بعد ١٠ ثوانٍ يُطرد المستخدم.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="✅ مع refresh" data-kind="fix">
+const useAuth = create((set) => ({
+  status: 'guest', accessToken: null, expiresAt: null,
+  setSession: ({ accessToken, expiresAt }) =>
+    set({ status: 'authenticated', accessToken, expiresAt }),
+  clearSession: () =>
+    set({ status: 'guest', accessToken: null }),
+}));
+
+// مثل الـ interceptor: عند 401 جدّد التوكن وأعد الطلب
+async function apiCall(request) {
+  try {
+    return await request(useAuth.getState().accessToken);
+  } catch (err) {
+    if (err.status !== 401) throw err;
+    console.log('⚠️ 401 → POST /auth/refresh 🍪');
+    try {
+      const data = await fakeAuthApi.refresh();
+      useAuth.getState().setSession(data);
+    } catch (refreshErr) {
+      console.log('⛔', 'فشل التجديد، خروج');
+      useAuth.getState().clearSession();
+      throw refreshErr;
+    }
+    console.log('🔁 نعيد الطلب بالتوكن الجديد');
+    return request(useAuth.getState().accessToken);
+  }
+}
+
+function Profile() {
+  const expiresAt = useAuth((s) => s.expiresAt);
+  const [user, setUser] = useState(null);
+  const [now, setNow] = useState(Date.now());
+  async function loadMe() {
+    console.log('GET /me + Bearer');
+    const me = await apiCall((t) => fakeAuthApi.me(t));
+    console.log('✅ 200', me.name);
+    setUser(me);
+  }
+  useEffect(() => {
+    loadMe();
+    const poll = setInterval(loadMe, 4000);
+    const tick = setInterval(() => setNow(Date.now()), 250);
+    return () => {
+      clearInterval(poll);
+      clearInterval(tick);
+    };
+  }, []);
+  const ms = expiresAt - now;
+  const left = Math.max(0, Math.ceil(ms / 1000));
+  return (
+    <div className="stack">
+      <p>👤 {user ? `${user.name} (${user.role})` : '…'}</p>
+      <p className={left ? 'ok' : 'error'}>⏱ {left}s</p>
+      <p>🍪 <code>{fakeAuthApi.cookie}</code></p>
+      <button onClick={() => useAuth.getState().clearSession()}>
+        خروج
+      </button>
+    </div>
+  );
+}
+
+function App() {
+  const status = useAuth((s) => s.status);
+  async function login(e) {
+    e.preventDefault();
+    console.log('POST /auth/login');
+    const data = await fakeAuthApi.login(
+      'sara@demo.dev', '123456');
+    useAuth.getState().setSession(data);
+  }
+  if (status === 'authenticated') return <Profile />;
+  return (
+    <form onSubmit={login} className="row">
+      <input defaultValue="sara@demo.dev" readOnly />
+      <input type="password" defaultValue="123456" readOnly />
+      <button className="primary">دخول</button>
+    </form>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 بدون refresh" data-kind="bug">
+const useAuth = create((set) => ({
+  status: 'guest', accessToken: null, expiresAt: null,
+  setSession: ({ accessToken, expiresAt }) =>
+    set({ status: 'authenticated', accessToken, expiresAt }),
+  clearSession: () =>
+    set({ status: 'guest', accessToken: null }),
+}));
+
+// ❌ أي 401 = خروج فورًا، بدون محاولة refresh
+async function apiCall(request) {
+  try {
+    return await request(useAuth.getState().accessToken);
+  } catch (err) {
+    console.log('⛔ 401', 'خروج! والكوكي ما زالت صالحة');
+    useAuth.getState().clearSession(); // ❌
+    throw err;
+  }
+}
+
+function Profile() {
+  const expiresAt = useAuth((s) => s.expiresAt);
+  const [user, setUser] = useState(null);
+  const [now, setNow] = useState(Date.now());
+  async function loadMe() {
+    console.log('GET /me + Bearer');
+    const me = await apiCall((t) => fakeAuthApi.me(t));
+    console.log('✅ 200', me.name);
+    setUser(me);
+  }
+  useEffect(() => {
+    loadMe();
+    const poll = setInterval(loadMe, 4000);
+    const tick = setInterval(() => setNow(Date.now()), 250);
+    return () => {
+      clearInterval(poll);
+      clearInterval(tick);
+    };
+  }, []);
+  const ms = expiresAt - now;
+  const left = Math.max(0, Math.ceil(ms / 1000));
+  return (
+    <div className="stack">
+      <p>👤 {user ? `${user.name} (${user.role})` : '…'}</p>
+      <p className={left ? 'ok' : 'error'}>⏱ {left}s</p>
+      <p>🍪 <code>{fakeAuthApi.cookie}</code></p>
+    </div>
+  );
+}
+
+function App() {
+  const status = useAuth((s) => s.status);
+  async function login(e) {
+    e.preventDefault();
+    console.log('POST /auth/login');
+    const data = await fakeAuthApi.login(
+      'sara@demo.dev', '123456');
+    useAuth.getState().setSession(data);
+  }
+  if (status === 'authenticated') return <Profile />;
+  return (
+    <form onSubmit={login} className="row">
+      <input defaultValue="sara@demo.dev" readOnly />
+      <input type="password" defaultValue="123456" readOnly />
+      <button className="primary">دخول</button>
+    </form>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="جرّب: سباق الـ refresh" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب · ٢</p><h2>ثلاثة طلبات تفشل معًا: كم refresh؟</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>اضغط <b>دخول</b>، ثم <b>٣ طلبات معًا</b>. نبدأ بتوكن منتهٍ عمدًا، فالثلاثة تحصل على 401.</li>
+          <li><code>serverRefresh</code> يحاكي قاعدة السيرفر الحقيقي: <b>كل كوكي تُستخدم مرة واحدة</b> (rotation).</li>
+          <li>🐞: ثلاث طلبات refresh بنفس الكوكي. الأول ينجح والباقي 401 ← خروج.</li>
+          <li>✅: <code>refreshPromise</code> مشترك ← refresh واحد، والثلاثة تنجح.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="🐞 كل طلب يعمل refresh" data-kind="bug">
+// محاكاة السيرفر: الكوكي المستخدمة تُرفض (rotation)
+const used = new Set();
+async function serverRefresh() {
+  const sent = fakeAuthApi.cookie; // المتصفح يرسلها
+  const data = await fakeAuthApi.refresh();
+  if (used.has(sent)) throw { status: 401 };
+  used.add(sent);
+  return data;
+}
+
+// ❌ كل نداء يبدأ refresh جديدًا
+function refreshSession() {
+  console.log('🔄 POST /auth/refresh');
+  return serverRefresh();
+}
+
+async function apiCall(name, token) {
+  try {
+    return await fakeAuthApi.me(token);
+  } catch {
+    console.log(`${name}: 401`);
+    const data = await refreshSession();
+    return fakeAuthApi.me(data.accessToken);
+  }
+}
+
+function App() {
+  const [msg, setMsg] = useState('سجّل الدخول أولًا');
+  async function login() {
+    await fakeAuthApi.login('sara@demo.dev', '123456');
+    setMsg('✅ دخلنا (والتوكن عندنا منتهٍ)');
+  }
+  async function fireThree() {
+    const expired = 'acc_expired';
+    try {
+      await Promise.all(['A', 'B', 'C'].map(
+        (n) => apiCall(n, expired)));
+      setMsg('✅ الطلبات الثلاثة نجحت');
+    } catch {
+      console.log('⛔', 'فشل التجديد، خروج');
+      setMsg('⛔ طُرد المستخدم!');
+    }
+  }
+  return (
+    <div className="stack">
+      <div className="row">
+        <button onClick={login}>دخول</button>
+        <button className="primary" onClick={fireThree}>
+          ٣ طلبات معًا
+        </button>
+      </div>
+      <h3>{msg}</h3>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ refresh واحد مشترك" data-kind="fix">
+// محاكاة السيرفر: الكوكي المستخدمة تُرفض (rotation)
+const used = new Set();
+async function serverRefresh() {
+  const sent = fakeAuthApi.cookie; // المتصفح يرسلها
+  const data = await fakeAuthApi.refresh();
+  if (used.has(sent)) throw { status: 401 };
+  used.add(sent);
+  return data;
+}
+
+// ✅ single-flight: الكل ينتظر نفس الـ promise
+let refreshPromise = null;
+function refreshSession() {
+  if (!refreshPromise) {
+    console.log('🔄 POST /auth/refresh');
+    refreshPromise = serverRefresh()
+      .finally(() => { refreshPromise = null; });
+  }
+  return refreshPromise;
+}
+
+async function apiCall(name, token) {
+  try {
+    return await fakeAuthApi.me(token);
+  } catch {
+    console.log(`${name}: 401`);
+    const data = await refreshSession();
+    return fakeAuthApi.me(data.accessToken);
+  }
+}
+
+function App() {
+  const [msg, setMsg] = useState('سجّل الدخول أولًا');
+  async function login() {
+    await fakeAuthApi.login('sara@demo.dev', '123456');
+    setMsg('✅ دخلنا (والتوكن عندنا منتهٍ)');
+  }
+  async function fireThree() {
+    const expired = 'acc_expired';
+    try {
+      await Promise.all(['A', 'B', 'C'].map(
+        (n) => apiCall(n, expired)));
+      setMsg('✅ الطلبات الثلاثة نجحت');
+    } catch {
+      console.log('⛔', 'فشل التجديد، خروج');
+      setMsg('⛔ طُرد المستخدم!');
+    }
+  }
+  return (
+    <div className="stack">
+      <div className="row">
+        <button onClick={login}>دخول</button>
+        <button className="primary" onClick={fireThree}>
+          ٣ طلبات معًا
+        </button>
+      </div>
+      <h3>{msg}</h3>
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="slide divider" id="part-6" data-title="الجزء ٦ · أخطاء شائعة" data-part="6">
+  <div class="wrap">
+    <div class="part-num">٦</div>
+    <h1>أخطاء شائعة</h1>
+    <p class="lead">ستة أخطاء تتكرر في المشاريع الحقيقية. لكل خطأ: ما المشكلة، وما الإصلاح.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="أخطاء ١–٣" data-part="6">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">أخطاء شائعة · ١–٣</p><h2>التخزين، والخروج، والسباق</h2></div>
+    <div class="grid-3">
+      <div class="card bad">
+        <h3>١. التوكن في localStorage</h3>
+        <p class="sm muted">أي سكربت XSS يقرؤه ويرسله لنفسه.</p>
+        <script type="text/x-code" data-class="small">
+localStorage.setItem('token', t); // ❌
+setSession({ accessToken: t }); // ✅
+// والـ refresh في كوكي httpOnly
+        </script>
+        <p class="fix-line"><b>الإصلاح:</b> الذاكرة للـ access، والكوكي httpOnly للـ refresh.</p>
+      </div>
+      <div class="card bad step">
+        <h3>٢. الخروج دون مسح الكاش</h3>
+        <p class="sm muted">المستخدم التالي على نفس الجهاز يرى ملاحظات السابق للحظة.</p>
+        <script type="text/x-code" data-class="small">
+onSettled: clearSession, // ❌
+onSettled: () => { // ✅
+  clearSession();
+  queryClient.clear();
+},
+        </script>
+        <p class="fix-line"><b>الإصلاح:</b> <code>endSessionLocally()</code> تمسح الـ store والكاش معًا.</p>
+      </div>
+      <div class="card bad step">
+        <h3>٣. سباق الـ refresh</h3>
+        <p class="sm muted">٣ طلبات تفشل معًا ← ٣ refresh، والـ rotation تقتل الجلسة.</p>
+        <script type="text/x-code" data-class="small">
+await http.post('/auth/refresh'); // ❌
+if (!refreshPromise) { // ✅
+  refreshPromise = http
+    .post('/auth/refresh')
+    .finally(() => {
+      refreshPromise = null;
+    });
+}
+        </script>
+        <p class="fix-line"><b>الإصلاح:</b> single-flight في <code>refreshSession()</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="أخطاء ٤–٦" data-part="6">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">أخطاء شائعة · ٤–٦</p><h2>الوميض، والثقة بالفرونت، والأسرار</h2></div>
+    <div class="grid-3">
+      <div class="card bad">
+        <h3>٤. وميض صفحة الدخول عند reload</h3>
+        <p class="sm muted">نبدأ بـ <code>'guest'</code> فنحوّل إلى صفحة الدخول، ثم يصل التوكن فنرجع. وميض، وأحيانًا حلقة redirect.</p>
+        <script type="text/x-code" data-class="small">
+status: 'guest', // ❌ قبل أن نسأل
+status: 'checking', // ✅ لا نعرف بعد
+// في الـ guard:
+if (status === 'checking')
+  return <Spinner />;
+        </script>
+        <p class="fix-line"><b>الإصلاح:</b> حالة ثالثة <code>'checking'</code> و AuthBootstrap.</p>
+      </div>
+      <div class="card bad step">
+        <h3>٥. الثقة بالـ role في الفرونت</h3>
+        <p class="sm muted">إخفاء زر "Admin" ليس حماية. أي أحد يعدّل الـ JS أو يرسل الطلب بنفسه.</p>
+        <script type="text/x-code" data-class="small">
+if (user.role === 'admin') { // ❌
+  showStats(); // هذا وحده ليس حماية
+}
+// ✅ السيرفر يقرر دائمًا
+app.get('/api/admin/stats',
+  requireAuth, requireRole('admin'),
+  sendStats);
+        </script>
+        <p class="fix-line"><b>الإصلاح:</b> الـ guard للتجربة، والسيرفر يرد بـ 401/403.</p>
+      </div>
+      <div class="card bad step">
+        <h3>٦. أسرار داخل الـ JWT</h3>
+        <p class="sm muted">الـ payload مقروء لأي أحد بـ <code>atob</code>. ليس مشفرًا!</p>
+        <script type="text/x-code" data-class="small">
+jwt.sign({ sub, password }, …); // ❌
+jwt.sign( // ✅ الحد الأدنى فقط
+  { sub: user.id, role: user.role },
+  ACCESS_SECRET,
+  { expiresIn: 30 },
+);
+        </script>
+        <p class="fix-line"><b>الإصلاح:</b> معرّف المستخدم ودوره فقط، وعمر قصير.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ===================================================================== -->
+<section class="slide" id="part-7" data-title="الخلاصة: قائمة المراجعة" data-part="7">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الجزء ٧ · الخلاصة</p><h2>قائمة مراجعة لأي تطبيق فيه Auth</h2></div>
+    <ol class="checklist">
+      <li class="step"><span>access token <b>قصير</b> في الذاكرة (Zustand)، و refresh token في كوكي <code>httpOnly</code> + <code>sameSite</code>.</span></li>
+      <li class="step"><span>interceptor يضيف <code>Bearer</code>، وآخر يلتقط 401 ← refresh <b>واحد مشترك</b> ← إعادة الطلب <b>مرة واحدة</b>.</span></li>
+      <li class="step"><span>فشل الـ refresh = خروج محلي: امسح الـ store <b>والكاش</b>.</span></li>
+      <li class="step"><span>حالة <code>'checking'</code> عند فتح التطبيق، فلا وميض ولا redirect خاطئ.</span></li>
+      <li class="step"><span>المستخدم من <code>GET /me</code> (React Query)، والتوكن في Zustand. لكل معلومة مصدر واحد.</span></li>
+      <li class="step"><span>الـ guards للتجربة، و<b>السيرفر</b> هو من يقرر: 401 لـ "من أنت؟" و 403 لـ "غير مسموح".</span></li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide" data-title="شغّل المشروع الحقيقي" data-part="7">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">react-auth-flow</p><h2>شغّل المشروع وجرّب كل سيناريو بنفسك</h2></div>
+    <div class="cols">
+      <div>
+        <script type="text/x-code">
+cd react-auth-flow
+npm install
+npm run dev
+        </script>
+        <p class="sm muted" style="margin:0.4rem 0 0.6rem">السيرفر على <code>:4000</code> والتطبيق على <code>http://localhost:5173</code>. خيارات مفيدة للكلاس:</p>
+        <script type="text/x-code">
+ACCESS_TTL=10 npm run dev
+LATENCY=1500 npm run dev
+        </script>
+        <p class="sm muted" style="margin-top:0.4rem">الأول: التوكن يعيش ١٠ ثوانٍ (الافتراضي ٣٠). الثاني: شبكة بطيئة لرؤية حالات الـ loading.</p>
+        <div class="card" style="margin-top:0.8rem">
+          <h3>حسابات التجربة</h3>
+          <p><code>student@demo.dev</code> (student) · <code>teacher@demo.dev</code> (admin)</p>
+          <p>كلمة المرور: <code>password123</code></p>
+        </div>
+      </div>
+      <ul class="points">
+        <li class="step">افتح <b>Network</b> وسجّل الدخول: التوكن في الـ JSON، والكوكي في <code>Set-Cookie</code>. الصق التوكن في jwt.io.</li>
+        <li class="step">افتح <b>Application ← Local Storage</b>: فقط <code>lastEmail</code>.</li>
+        <li class="step">انتظر انتهاء التوكن وأضف ملاحظة: <code>401 → refresh → retry</code> في Network.</li>
+        <li class="step">ادخل كطالب وافتح <code>/admin</code>: صفحة 403. اضغط reload: spinner ثم تبقى مسجّلًا.</li>
+        <li class="step">تمرين: احذف <code>original._retry = true</code>. ماذا يحدث عندما يُلغى الـ refresh token؟ ولماذا؟</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide title-slide" data-title="أسئلة؟" data-part="7">
+  <div class="wrap">
+    <p class="big-q">أسئلة؟ 🙋</p>
+    <p class="lead">تذكّر الجملة الأهم: <b>الفرونت إند يحفظ التوكن ويرسله ويجدده، لكن السيرفر وحده يقرر.</b></p>
+    <div class="links">
+      <a href="state.html">📦 الـ State: useState و Context و Zustand</a>
+      <a href="props.html">🔁 الـ Props وإعادة الرندر</a>
+      <a href="index.html">→ كل العروض</a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="progress"><div id="progress-bar"></div></div>
+<div class="pager">
+  <button id="prev" title="السابق (→)" aria-label="السابق">→</button>
+  <button id="next" title="التالي (←)" aria-label="التالي">←</button>
+</div>
+<dialog id="overview">
+  <div class="ov-head"><h2>كل الشرائح</h2><button class="icon-btn ov-close" aria-label="إغلاق">✕</button></div>
+  <div class="ov-grid"></div>
+</dialog>
+
+<script>window.DECK = { id: 'auth', parts: { 1: 'الجزء ١ · المفاهيم', 2: 'الجزء ٢ · التوكنات وأين نحفظها', 3: 'الجزء ٣ · التدفق خطوة بخطوة', 4: 'الجزء ٤ · الكود', 5: 'الجزء ٥ · جرّبها مباشرة', 6: 'الجزء ٦ · أخطاء شائعة', 7: 'الجزء ٧ · الخلاصة' } };</script>
+<script src="vendor/react.development.js"></script>
+<script src="vendor/react-dom.development.js"></script>
+<script src="vendor/babel.min.js"></script>
+<script src="shared/js/common.js"></script>
+<script src="shared/js/diagrams.js"></script>
+<script src="shared/js/runner.js"></script>
+<script src="shared/js/deck.js"></script>
+</body>
+</html>

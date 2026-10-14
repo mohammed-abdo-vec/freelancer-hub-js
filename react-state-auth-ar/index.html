@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>State و Props و Auth</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="shared/css/deck.css">
+  <style>
+    body.hub-body { overflow: auto; height: auto; }
+    .hub-wrap { max-width: 1100px; margin: 0 auto; padding: 3.5rem clamp(16px, 4vw, 3rem) 4rem; display: flex; flex-direction: column; gap: 1.6rem; }
+    .hub-top { display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+    .decks { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1rem; }
+    @media (max-width: 900px) { .decks { grid-template-columns: minmax(0, 1fr); } }
+    .deck-card {
+      display: flex; flex-direction: column; gap: 0.5rem; text-decoration: none; color: inherit;
+      background: var(--surface); border: 1px solid var(--line); border-top: 6px solid var(--c);
+      border-radius: var(--radius); padding: 1.1rem 1.2rem 1.2rem; box-shadow: var(--shadow); transition: transform 0.15s;
+    }
+    .deck-card:hover { transform: translateY(-4px); border-color: var(--c); }
+    .deck-card .num { font-size: 2.4rem; font-weight: 900; color: var(--c); line-height: 1; }
+    .deck-card h2 { font-size: 1.4rem; }
+    .deck-card p { color: var(--muted); font-size: 0.92rem; }
+    .deck-card ul { margin: 0.2rem 0 0; padding-inline-start: 1.1rem; font-size: 0.88rem; display: flex; flex-direction: column; gap: 0.2rem; }
+    .deck-card .go { margin-top: auto; padding-top: 0.6rem; font-weight: 800; color: var(--c); }
+    .order { font-size: 0.95rem; }
+    .keys { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; color: var(--muted); font-size: 0.88rem; }
+  </style>
+</head>
+<body class="hub-body">
+  <main class="hub-wrap">
+    <div class="hub-top">
+      <p class="kicker" style="color: var(--p1)">React · جلسات عملية</p>
+      <button class="icon-btn" id="theme-btn" title="فاتح / داكن" aria-label="تبديل الثيم">◐</button>
+    </div>
+    <h1>الـ State والـ Props والـ Auth</h1>
+    <p class="lead">ثلاثة عروض تفاعلية: كل مثال كود فيها هو React حقيقي يعمل داخل الصفحة، مع مخططات تشرح التدفق خطوة بخطوة.</p>
+
+    <div class="decks">
+      <a class="deck-card" href="state.html" style="--c: var(--p2)">
+        <div class="num">١</div>
+        <h2>الـ State</h2>
+        <p>أين تعيش البيانات التي تتغير، وكيف نشاركها.</p>
+        <ul>
+          <li><code>useState</code> ودورة الرندر</li>
+          <li>رفع الـ state للأب</li>
+          <li>Context</li>
+          <li>Zustand</li>
+          <li>أين أضع الـ state؟</li>
+        </ul>
+        <span class="go">ابدأ العرض ←</span>
+      </a>
+      <a class="deck-card" href="props.html" style="--c: var(--p4)">
+        <div class="num">٢</div>
+        <h2>الـ Props وإعادة الرندر</h2>
+        <p>لماذا تمرير الـ state عبر الـ props يجعل كومبوننتات أكثر تعيد الرندر مقارنة بـ Zustand.</p>
+        <ul>
+          <li>متى يعيد الكومبوننت الرندر؟</li>
+          <li>الـ prop drilling وسلسلة الرندر</li>
+          <li>نفس التطبيق مع Zustand و Context</li>
+          <li><code>memo</code> والـ composition</li>
+        </ul>
+        <span class="go">ابدأ العرض ←</span>
+      </a>
+      <a class="deck-card" href="auth.html" style="--c: var(--p3)">
+        <div class="num">٣</div>
+        <h2>الـ Auth في الفرونت إند</h2>
+        <p>كيف يعرف التطبيق من أنت، وكيف يبقى دخولك صالحًا.</p>
+        <ul>
+          <li>access token و refresh token</li>
+          <li>أين نحفظ التوكن؟</li>
+          <li>تسجيل الدخول، الـ refresh، الخروج</li>
+          <li>الـ interceptors وحماية الصفحات</li>
+        </ul>
+        <span class="go">ابدأ العرض ←</span>
+      </a>
+    </div>
+
+    <p class="rule order">الترتيب المقترح: <b>State</b> ثم <b>Props</b> ثم <b>Auth</b>. عرض الـ Auth يستخدم Zustand، وهو مشروح في العرض الأول.
+      <small>المشروع الكامل الذي يطبّق الـ Auth موجود في مجلد <code>react-auth-flow</code>.</small></p>
+
+    <div class="keys">
+      <span><kbd>←</kbd> <kbd>Space</kbd> التالي</span>
+      <span><kbd>→</kbd> السابق</span>
+      <span><kbd>O</kbd> كل الشرائح</span>
+      <span><kbd>R</kbd> أعد تشغيل المثال</span>
+      <span><kbd>T</kbd> الثيم</span>
+      <span><kbd>F</kbd> ملء الشاشة</span>
+    </div>
+  </main>
+
+  <script src="shared/js/common.js"></script>
+  <script>
+    // نفس مفتاح الثيم المستخدم في العروض، حتى يبقى اختيارك واحدًا في كل الصفحات.
+    const root = document.documentElement;
+    const saved = Deck.store.get('ar-deck-theme');
+    if (saved) root.dataset.theme = saved;
+    document.getElementById('theme-btn').addEventListener('click', () => {
+      const dark = root.dataset.theme ? root.dataset.theme === 'dark' : matchMedia('(prefers-color-scheme: dark)').matches;
+      root.dataset.theme = dark ? 'light' : 'dark';
+      Deck.store.set('ar-deck-theme', root.dataset.theme);
+    });
+  </script>
+</body>
+</html>

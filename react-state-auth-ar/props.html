@@ -1,0 +1,1410 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>الـ Props وإعادة الرندر</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="shared/css/deck.css">
+  <style>
+    /* ألوان الجزأين ٧ و ٨ (deck.css يعرّف حتى ٦ فقط) */
+    body[data-part="7"] { --accent: var(--p2); }
+    body[data-part="8"] { --accent: var(--p4); }
+    .ov-item[data-part="7"] { --c: var(--p2); } .ov-item[data-part="8"] { --c: var(--p4); }
+
+    /* شجرة الكومبوننتات: .flow + .fbranch، والعقدة "المضاءة" = عملت رندر */
+    .ptree .fn { min-width: 7.4rem; font-family: var(--mono); padding: 0.35rem 0.8rem; }
+    .ptree .fn small { font-family: var(--sans); }
+    .ptree .fa { min-height: 1.7rem; }
+    .ptree .fa code { font-size: 0.72rem; }
+    .ptree .fbranch { gap: 1rem; }
+    .fn.need { border-color: var(--fix); }
+    .fn.has-state { border-color: var(--p3); }
+    .fn.lit, .fn:has(> .rr.shown) {
+      border-color: var(--react-deep);
+      background: color-mix(in srgb, var(--react) 30%, var(--surface));
+    }
+    .fn.calm { border-style: dashed; color: var(--muted); box-shadow: none; }
+    .rr {
+      position: absolute; top: -0.75rem; inset-inline-end: -0.7rem; white-space: nowrap;
+      background: var(--react); color: var(--react-ink); font-family: var(--sans);
+      font-size: 0.66rem; font-weight: 800; border-radius: 999px; padding: 0 0.45rem;
+    }
+    .rr.zero { background: var(--surface-2); color: var(--muted); border: 1px solid var(--line); }
+    .ptree.mini .fn { min-width: 5.8rem; font-size: 0.78rem; padding: 0.22rem 0.55rem; }
+    .ptree.mini .fa { min-height: 1.25rem; margin: 0.1rem 0 0.3rem; }
+    .ptree.mini .fbranch { gap: 0.6rem; }
+
+    /* مخطط "لماذا عمل هذا الكومبوننت رندر؟" */
+    .dgrid { display: grid; grid-template-columns: auto 6.5rem auto; align-items: center; justify-content: center; }
+    .dgrid .fn { max-width: 17rem; }
+    .dgrid .vcell { display: flex; justify-content: center; }
+    .ha { position: relative; height: 2px; background: var(--fix); margin: 0 0.3rem 0 0.7rem; }
+    .ha::after { content: ""; position: absolute; top: 50%; left: -8px; transform: translateY(-50%); border: 7px solid transparent; border-right: 9px solid var(--fix); border-left: 0; }
+    .ha span { position: absolute; bottom: 0.3rem; left: 50%; transform: translateX(-50%); color: var(--fix); font-weight: 800; font-size: 0.78rem; }
+
+    .runner.wide .r-preview { max-height: 20rem; }
+    .r-preview .rbox { padding: 0.15rem 0.5rem 0.3rem; margin: 0.25rem 0; }
+    .r-preview .rbox-head { font-size: 0.72rem; }
+    .r-preview .row { align-items: flex-start; }
+    .r-preview .row > .rbox { flex: 1 1 0; min-width: 0; }
+    .r-preview button { margin: 0.1rem 0; }
+    .r-preview .light .rbox-head, .r-preview .light .rbox-head b { color: #2b2b2b; }
+    .r-preview .dark .rbox-head, .r-preview .dark .rbox-head b { color: #e9ecef; }
+    .big-q { font-size: 1.25rem; font-weight: 700; }
+    .num-big { font-family: var(--mono); font-weight: 900; color: var(--accent); }
+    td.n { font-family: var(--mono); font-weight: 800; text-align: center; }
+    td.hot { color: var(--bug); }
+    td.cool { color: var(--fix); }
+    .flips .flip { min-height: 9.5rem; }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-logo" viewBox="-11.5 -10.23 23 20.46" aria-hidden="true"><circle r="2.05" fill="#61dafb"/><g stroke="#61dafb" stroke-width="1" fill="none"><ellipse rx="11" ry="4.2"/><ellipse rx="11" ry="4.2" transform="rotate(60)"/><ellipse rx="11" ry="4.2" transform="rotate(120)"/></g></svg>
+    <a class="home brand-name" href="index.html">→ كل العروض</a>
+  </div>
+  <div class="part-label" id="part-label"></div>
+  <div class="controls">
+    <button class="icon-btn" id="overview-btn" title="كل الشرائح (O)" aria-label="كل الشرائح">☰</button>
+    <button class="icon-btn" id="theme-btn" title="فاتح / داكن (T)" aria-label="تبديل الثيم">◐</button>
+    <button class="icon-btn" id="fs-btn" title="ملء الشاشة (F)" aria-label="ملء الشاشة">⛶</button>
+    <span class="counter" id="counter"></span>
+  </div>
+</header>
+
+<main class="deck" id="deck">
+
+<!-- ============================ العنوان ============================ -->
+<section class="slide title-slide" data-title="العنوان" data-part="0">
+  <div class="wrap">
+    <p class="kicker">React · الجلسة: الـ Props وإعادة الرندر</p>
+    <h1>الـ <span class="react-word">Props</span> وإعادة الرندر</h1>
+    <p class="lead">لماذا يجعل تمرير الـ state عبر الـ props كومبوننتات أكثر تعيد الرندر، مقارنةً بـ store خارجي مثل Zustand؟ سنعدّ الرندرات بأعيننا.</p>
+    <p class="hint">اضغط <kbd>←</kbd> للبدء · <kbd>O</kbd> كل الشرائح · <kbd>R</kbd> أعد تشغيل الكود · <kbd>T</kbd> الثيم · <kbd>F</kbd> ملء الشاشة</p>
+  </div>
+</section>
+
+<section class="slide" data-title="خطة الجلسة" data-part="0">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الخطة</p><h2>ماذا سنتعلم اليوم؟</h2></div>
+    <div class="agenda">
+      <a href="#" data-goto="#part-1" style="--c: var(--p1)"><div class="num">١</div><h3>ما هي الـ Props؟</h3><p>مدخلات للقراءة فقط، البيانات تنزل والأحداث تصعد.</p></a>
+      <a href="#" data-goto="#part-2" style="--c: var(--p2)"><div class="num">٢</div><h3>متى يعيد الكومبوننت الرندر؟</h3><p>ثلاثة أسباب فقط، وخرافة مشهورة.</p></a>
+      <a href="#" data-goto="#part-3" style="--c: var(--p3)"><div class="num">٣</div><h3>الـ Prop drilling</h3><p>تغيير واحد يضيء الشجرة كلها.</p></a>
+      <a href="#" data-goto="#part-4" style="--c: var(--p4)"><div class="num">٤</div><h3>نفس التطبيق مع Zustand</h3><p>فقط من اشترك يعيد الرندر.</p></a>
+      <a href="#" data-goto="#part-5" style="--c: var(--p5)"><div class="num">٥</div><h3>Context في المنتصف</h3><p>لا drilling، لكن كل المستهلكين يعيدون الرندر.</p></a>
+      <a href="#" data-goto="#part-6" style="--c: var(--p6)"><div class="num">٦</div><h3>حلول بدون مكتبة</h3><p>إنزال الـ state، الـ children، و <code>memo</code>.</p></a>
+      <a href="#" data-goto="#part-7" style="--c: var(--p2)"><div class="num">٧</div><h3>أخطاء Zustand</h3><p>الـ store كله، و selector يرجع object جديد.</p></a>
+      <a href="#" data-goto="#part-8" style="--c: var(--p4)"><div class="num">٨</div><h3>الخلاصة</h3><p>متى نستخدم ماذا، وسؤال: هل الرندر مشكلة أصلًا؟</p></a>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ الجزء ١ ============================ -->
+<section class="slide divider" id="part-1" data-title="الجزء ١ · ما هي الـ Props؟" data-part="1">
+  <div class="wrap">
+    <div class="part-num">١</div>
+    <h1>ما هي الـ Props؟</h1>
+    <p class="lead">مراجعة سريعة: الـ props هي الطريقة التي يكلّم بها الأب أبناءه.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="الـ props = مدخلات الدالة" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الفكرة</p><h2>الكومبوننت دالة، والـ props هي مدخلاتها</h2></div>
+    <div class="cols">
+      <div class="stack" style="display:flex;flex-direction:column;gap:0.8rem">
+        <script type="text/x-code">
+// هذا ما نكتبه في JSX
+<Avatar name="Sara" size={48} />
+
+// وهكذا يستدعي React الدالة تقريبًا
+Avatar({ name: 'Sara', size: 48 });
+
+function Avatar({ name, size }) {
+  return <img alt={name} width={size} />;
+}
+        </script>
+        <script type="text/x-code">
+function Avatar(props) {
+  props.size = 64; // ❌ ممنوع: الـ props للقراءة فقط
+}
+function Avatar({ size = 64 }) { // ✅ قيمة افتراضية
+}
+        </script>
+      </div>
+      <ul class="points">
+        <li class="step">الـ <b>props</b> مثل <b>مدخلات الدالة</b> <span class="en">(arguments)</span>: الأب يقرّرها، والابن يستقبلها.</li>
+        <li class="step">هي <b>للقراءة فقط</b>. الابن لا يغيّرها أبدًا. إذا أراد تغيير شيء، يطلب ذلك من الأب.</li>
+        <li class="step">يمكن تمرير أي قيمة: نص، رقم، object، مصفوفة، <b>دالة</b>، وحتى JSX <span class="en">(children)</span>.</li>
+        <li class="step">كل مرة يعمل الأب رندر، يستدعي React دالة الابن من جديد مع props جديدة. <b>تذكّروا هذه الجملة</b>، هي مفتاح العرض كله.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="البيانات تنزل، الأحداث تصعد" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">اتجاه البيانات</p><h2>البيانات تنزل ↓ والأحداث تصعد ↑</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <div class="cols" style="gap:0.8rem;align-items:center">
+          <div class="flow">
+            <div class="fn has-state">App<small>يملك <code>count</code></small></div>
+            <div class="fa"><code>count</code></div>
+            <div class="fn">Display<small>يعرض فقط</small></div>
+          </div>
+          <div class="flow">
+            <div class="fn">IncButton<small>يستقبل دالة</small></div>
+            <div class="fa"><code>onInc()</code></div>
+            <div class="fn has-state">App<small>ينفّذ <code>setCount</code></small></div>
+          </div>
+        </div>
+        <ul class="points tight">
+          <li class="step">الـ <b>state</b> تعيش في <code>App</code>، وتنزل لـ <code>Display</code> كـ prop.</li>
+          <li class="step"><code>IncButton</code> لا يغيّر الرقم بنفسه. يستدعي الدالة <code>onInc</code> التي أعطاه إياها الأب، والأب هو من يغيّر.</li>
+          <li class="step">جرّب تبويب 🐞: الابن يحاول تعديل الـ props فينهار التطبيق.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="البيانات ↓ الأحداث ↑" data-kind="fix">
+function Display({ count }) {
+  return <p className="big">{count}</p>;
+}
+
+function IncButton({ onInc }) {
+  return <button onClick={onInc}>Add 1</button>;
+}
+
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <div className="stack">
+      <Display count={count} />
+      <IncButton onInc={() => setCount(count + 1)} />
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="🐞 تعديل الـ props" data-kind="bug">
+function Display(props) {
+  props.count = 99; // ❌ الـ props للقراءة فقط
+  return <p className="big">{props.count}</p>;
+}
+
+function App() {
+  const [count, setCount] = useState(0);
+  return <Display count={count} />;
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ الجزء ٢ ============================ -->
+<section class="slide divider" id="part-2" data-title="الجزء ٢ · متى يعيد الكومبوننت الرندر؟" data-part="2">
+  <div class="wrap">
+    <div class="part-num">٢</div>
+    <h1>متى يعيد الكومبوننت الرندر؟</h1>
+    <p class="lead">قبل أن نقارن الـ props بـ Zustand، لازم نعرف بالضبط ما الذي يجعل كومبوننت يعيد الرندر <span class="en">(re-render)</span>.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="ثلاثة أسباب للرندر" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">ثلاثة أسباب فقط</p><h2>لماذا عمل هذا الكومبوننت رندر؟</h2></div>
+    <div class="cols cols-40">
+      <div style="display:flex;flex-direction:column;gap:0.8rem">
+        <ol class="points">
+          <li class="step">تغيّرت الـ <b>state الخاصة به</b> <span class="en">(useState / useReducer / store)</span>.</li>
+          <li class="step"><b>الأب عمل رندر</b>. وافتراضيًا يعيد React رندر <b>كل</b> الأبناء، تغيّرت الـ props أو لم تتغير.</li>
+          <li class="step">تغيّرت قيمة <b>context</b> يقرأه بـ <code>useContext</code>.</li>
+        </ol>
+        <div class="rule step">لا يوجد سبب رابع. "تغيّرت الـ props" <b>ليست</b> في القائمة!<small>الـ props تتغير فقط لأن الأب عمل رندر، أي أنها نتيجة للسبب ٢ وليست سببًا.</small></div>
+      </div>
+      <div class="diagram">
+        <div class="dgrid">
+          <div class="fn start">الكومبوننت عمل رندر. لماذا؟</div><div></div><div></div>
+          <div class="vcell"><div class="fa"></div></div><div></div><div></div>
+          <div class="fn decision">هل تغيّرت الـ state الخاصة به؟</div><div class="ha"><span>نعم</span></div><div class="fn ok">السبب ١: state خاصة</div>
+          <div class="vcell"><div class="fa no"><span>لا</span></div></div><div></div><div></div>
+          <div class="fn decision">هل عمل الأب رندر؟</div><div class="ha"><span>نعم</span></div><div class="fn ok">السبب ٢: رندر الأب<small>حتى لو الـ props نفسها</small></div>
+          <div class="vcell"><div class="fa no"><span>لا</span></div></div><div></div><div></div>
+          <div class="fn decision">هل تغيّر context يقرأه؟</div><div class="ha"><span>نعم</span></div><div class="fn ok">السبب ٣: الـ context</div>
+          <div class="vcell"><div class="fa no"><span>لا</span></div></div><div></div><div></div>
+          <div class="fn end">لا رندر 💤</div><div></div><div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="خرافة: الـ props تسبّب الرندر" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">تصحيح مفهوم</p><h2>خرافة مشهورة عن الـ props</h2></div>
+    <div class="vs">
+      <div class="card bad">
+        <p><span class="tag bad">❌ خرافة</span></p>
+        <p class="big-q">"الكومبوننت يعيد الرندر لأن الـ props تغيّرت."</p>
+        <p class="muted">إذن (حسب الخرافة) الكومبوننت الذي لا يستقبل props لن يعيد الرندر أبدًا، والذي يستقبل نفس القيم لن يعيد الرندر.</p>
+      </div>
+      <div class="vs-mid">←</div>
+      <div class="card good step">
+        <p><span class="tag good">✅ الحقيقة</span></p>
+        <p class="big-q">"الكومبوننت يعيد الرندر لأن <u>أباه</u> عمل رندر."</p>
+        <p class="muted">React لا يقارن الـ props افتراضيًا. الأب عمل رندر ← استدعى كل أبنائه من جديد، حتى الابن الذي <b>بلا props أصلًا</b>.</p>
+      </div>
+    </div>
+    <div class="cols" style="align-items:center">
+      <script type="text/x-code">
+// Header بلا props، ومع ذلك يعيد الرندر
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <>
+      <button onClick={() => setCount(count + 1)}>
+        Add 1
+      </button>
+      <Header />
+    </>
+  );
+}
+      </script>
+      <div class="rule big step">الـ props لا تُطلق الرندر. هي فقط "تركب" مع رندر الأب.<small>المقارنة بين الـ props القديمة والجديدة تحدث فقط إذا طلبناها بـ <code>React.memo</code> (الجزء ٦).</small></div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="مثال حي: ابن بلا props يعيد الرندر" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب</p><h2>اضغط كل زر وراقب أي صندوق يومض</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li><code>RenderBox</code> صندوق يومض ويعدّ كل مرة يعمل فيها الكومبوننت الذي يحتويه رندر. أول رقم <b>1</b> هو رندر البداية <span class="en">(mount)</span>.</li>
+          <li class="step">اضغط <b>App +1</b> ثلاث مرات: كل الصناديق تصير <b>4</b>. حتى <code>Header</code> الذي لا يستقبل أي props!</li>
+          <li class="step">اضغط <b>Counter +1</b>: فقط <code>Counter</code> يزيد. الـ state تؤثر على صاحبها <b>وما تحته</b>، ولا تصعد للأعلى.</li>
+          <li class="step">سؤال: لماذا <code>Display</code> يعيد الرندر؟ ليس لأن <code>count</code> تغيّر، بل لأن <code>App</code> عمل رندر.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="رندر الأب = رندر الأبناء">
+function Header() {
+  // لا يستقبل أي props!
+  return <RenderBox name="Header">Logo</RenderBox>;
+}
+
+function Display({ count }) {
+  return <RenderBox name="Display">count = {count}</RenderBox>;
+}
+
+function Counter() {
+  const [n, setN] = useState(0); // state خاصة به
+  return (
+    <RenderBox name="Counter">
+      <button onClick={() => setN(n + 1)}>
+        Counter +1
+      </button> {n}
+    </RenderBox>
+  );
+}
+
+function App() {
+  const [count, setCount] = useState(0);
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setCount(count + 1)}>
+        App +1
+      </button>
+      <div className="row">
+        <Header />
+        <Display count={count} />
+        <Counter />
+      </div>
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ الجزء ٣ ============================ -->
+<section class="slide divider" id="part-3" data-title="الجزء ٣ · الـ Prop drilling وسلسلة الرندر" data-part="3">
+  <div class="wrap">
+    <div class="part-num">٣</div>
+    <h1>الـ Prop drilling وسلسلة الرندر</h1>
+    <p class="lead">عندما يحتاج كومبوننت بعيد في أسفل الشجرة إلى قيمة، أين نضع الـ state؟ وماذا يكلّفنا ذلك؟</p>
+  </div>
+</section>
+
+<section class="slide" data-title="شجرة التطبيق والـ prop drilling" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Prop drilling</p><h2>فقط <code>Avatar</code> يحتاج <code>user</code>… فأين نضعه؟</h2></div>
+    <div class="cols">
+      <div class="diagram">
+        <div class="flow ptree">
+          <div class="fn has-state">App<small>هنا <code>useState(user)</code></small></div>
+          <div class="fa"><code>user</code></div>
+          <div class="fn calm">Layout<small>يمرّره فقط</small></div>
+          <div class="fbranch">
+            <div class="flow">
+              <div class="fa"><code>user</code></div>
+              <div class="fn calm">Sidebar<small>يمرّره فقط</small></div>
+              <div class="fa"><code>user</code></div>
+              <div class="fn calm">UserMenu<small>يمرّره فقط</small></div>
+              <div class="fa"><code>user</code></div>
+              <div class="fn need">Avatar<small>يستخدمه ✓</small></div>
+            </div>
+            <div class="flow">
+              <div class="fa"></div>
+              <div class="fn">Content<small>لا علاقة له</small></div>
+              <div class="fa"></div>
+              <div class="fn">Feed<small>لا علاقة له</small></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.8rem">
+        <ul class="points">
+          <li class="step">الـ state يجب أن تكون في <b>أقرب أب مشترك</b> لكل من يحتاجها. لو احتاج <code>Header</code> أيضًا الاسم، تصعد الـ state إلى <code>App</code>.</li>
+          <li class="step"><code>Layout</code> و <code>Sidebar</code> و <code>UserMenu</code> لا تهتم بـ <code>user</code> إطلاقًا، لكنها مجبرة على استقباله وتمريره.</li>
+          <li class="step">هذا اسمه <b class="term">prop drilling</b>: حفر طريق للـ prop عبر طبقات لا تحتاجه.</li>
+        </ul>
+        <script type="text/x-code">
+function Sidebar({ user }) { // لا يستخدمه
+  return <UserMenu user={user} />;
+}
+        </script>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="تغيير واحد يضيء الشجرة" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">سلسلة الرندر</p><h2>المستخدم غيّر اسمه: <code>setUser('Omar')</code></h2></div>
+    <div class="cols">
+      <div class="diagram">
+        <div class="flow ptree">
+          <div class="fn has-state">App<small>الـ state تغيّرت هنا</small><span class="rr step">⚡ رندر</span></div>
+          <div class="fa"><code>user</code></div>
+          <div class="fn">Layout<span class="rr step">⚡ رندر</span></div>
+          <div class="fbranch">
+            <div class="flow">
+              <div class="fa"><code>user</code></div>
+              <div class="fn">Sidebar<span class="rr step">⚡ رندر</span></div>
+              <div class="fa"><code>user</code></div>
+              <div class="fn">UserMenu<span class="rr step">⚡ رندر</span></div>
+              <div class="fa"><code>user</code></div>
+              <div class="fn need">Avatar<small>الوحيد الذي يحتاجه</small><span class="rr step">⚡ رندر</span></div>
+            </div>
+            <div class="flow">
+              <div class="fa"></div>
+              <div class="fn">Content<span class="rr step">⚡ رندر</span></div>
+              <div class="fa"></div>
+              <div class="fn">Feed<span class="rr step">⚡ رندر</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.8rem">
+        <ol class="points">
+          <li><code>App</code> تغيّرت الـ state الخاصة به ← <b>السبب ١</b>.</li>
+          <li><code>Layout</code> أبوه عمل رندر ← <b>السبب ٢</b>. وهكذا نزولًا: كل ابن يعيد الرندر لأن أباه عمل رندر.</li>
+          <li><code>Content</code> و <code>Feed</code> لا يستقبلان <code>user</code> أصلًا، ويعيدان الرندر أيضًا!</li>
+        </ol>
+        <div class="rule step"><b>سؤال للطلاب:</b> كم كومبوننت عمل رندر؟ وكم منها كان يحتاج فعلًا؟</div>
+        <div class="rule big step"><span class="num-big">7</span> رندرات من أجل <span class="num-big">1</span> يحتاجها.<small>كلما ارتفعت الـ state في الشجرة، كبرت الشجرة الفرعية التي تعيد الرندر معها.</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="مثال حي: الـ props عبر ٤ طبقات" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب · عدّوا معي</p><h2>الـ state في <code>App</code> وتنزل ٤ طبقات</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>قبل الضغط: كل الصناديق <b>1</b> (رندر البداية).</li>
+          <li class="step">اضغط <b>Rename</b> مرة واحدة: كم صندوقًا ومض؟ <b>كلها الستة</b>، وكلها صارت <b>2</b>.</li>
+          <li class="step">اضغط ٥ مرات (من البداية): كل الصناديق <b>6</b>. أي ٣٠ إعادة رندر، بينما <code>Avatar</code> وحده كان يحتاج ٥.</li>
+          <li class="step"><code>Content</code> لا يستقبل أي prop ويعيد الرندر مع كل ضغطة. السبب: أبوه <code>Layout</code> عمل رندر.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="Props: drilling" data-kind="bug">
+const NAMES = ['Sara', 'Omar', 'Lina'];
+const nextName = (n) => NAMES[(NAMES.indexOf(n) + 1) % 3];
+
+function Avatar({ user }) { // الوحيد الذي يستخدم user
+  return <RenderBox name="Avatar">👤 {user}</RenderBox>;
+}
+
+function UserMenu({ user }) { // يمرّر فقط
+  return (
+    <RenderBox name="UserMenu">
+      <Avatar user={user} />
+    </RenderBox>
+  );
+}
+
+function Sidebar({ user }) { // يمرّر فقط
+  return (
+    <RenderBox name="Sidebar">
+      <UserMenu user={user} />
+    </RenderBox>
+  );
+}
+
+function Content() { // لا يستقبل شيئًا
+  return <RenderBox name="Content">Posts</RenderBox>;
+}
+
+function Layout({ user }) { // يمرّر فقط
+  return (
+    <RenderBox name="Layout">
+      <div className="row">
+        <Sidebar user={user} />
+        <Content />
+      </div>
+    </RenderBox>
+  );
+}
+
+function App() {
+  const [user, setUser] = useState('Sara');
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setUser(nextName)}>Rename</button>
+      <Layout user={user} />
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ الجزء ٤ ============================ -->
+<section class="slide divider" id="part-4" data-title="الجزء ٤ · نفس التطبيق مع Zustand" data-part="4">
+  <div class="wrap">
+    <div class="part-num">٤</div>
+    <h1>نفس التطبيق مع Zustand</h1>
+    <p class="lead">ماذا لو عاشت الـ state <b>خارج</b> شجرة React تمامًا؟</p>
+  </div>
+</section>
+
+<section class="slide" data-title="تذكير سريع بـ Zustand" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">تذكير سريع</p><h2>Zustand في دقيقة</h2></div>
+    <div class="cols">
+      <script type="text/x-code">
+import { create } from 'zustand';
+
+// الـ store يعيش خارج React
+const useUser = create((set) => ({
+  user: 'Sara',
+  rename: (user) => set({ user }),
+}));
+
+function Avatar() {
+  // selector: أريد user فقط
+  const user = useUser((s) => s.user);
+  return <b>👤 {user}</b>;
+}
+      </script>
+      <div style="display:flex;flex-direction:column;gap:0.8rem">
+        <ul class="points">
+          <li class="step">الـ <b>store</b> متغير خارج شجرة React. لا يوجد أب يملكه.</li>
+          <li class="step">كل كومبوننت <b>يشترك</b> بنفسه عبر <b>selector</b>: <code>(s) =&gt; s.user</code>.</li>
+          <li class="step">عند كل تغيير، Zustand يشغّل الـ selector لكل مشترك ويقارن الناتج بالقديم <span class="en">(Object.is)</span>. <b>تغيّر؟</b> رندر. <b>لم يتغير؟</b> لا شيء.</li>
+          <li class="step">في الأمثلة الحية، <code>create</code> نسخة مصغّرة من Zustand (~٢٠ سطرًا فوق <code>useSyncExternalStore</code>) وتتصرف مثله تمامًا. في مشروع حقيقي: <code>import { create } from 'zustand'</code>.</li>
+        </ul>
+        <p class="muted">التفاصيل الكاملة في <a href="state.html">عرض الـ State</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="مثال حي: نفس الشجرة مع Zustand" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب · عدّوا مرة أخرى</p><h2>نفس الشجرة، لكن الـ state في store</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>لا props بين الطبقات. <code>Avatar</code> يقرأ <code>user</code> مباشرة من الـ store.</li>
+          <li class="step">اضغط <b>Rename</b>: يومض <b>Avatar وحده</b>. بعد ٥ ضغطات: <code>Avatar</code> عدّاده <b>6</b> وكل الباقي <b>1</b>.</li>
+          <li class="step"><code>App</code> يشترك في <code>rename</code> فقط، وهي نفس الدالة دائمًا، فلا يعيد الرندر.</li>
+          <li class="step">قارن التبويبين: نفس الشاشة، نفس السلوك، لكن ٥ إعادات رندر بدل ٣٠.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="Zustand: selector" data-kind="fix">
+const NAMES = ['Sara', 'Omar', 'Lina'];
+const nextName = (n) => NAMES[(NAMES.indexOf(n) + 1) % 3];
+
+const useUser = create((set) => ({
+  user: 'Sara',
+  rename: () => set((s) => ({ user: nextName(s.user) })),
+}));
+
+function Avatar() {
+  const user = useUser((s) => s.user); // ✅ يشترك في user
+  return <RenderBox name="Avatar">👤 {user}</RenderBox>;
+}
+
+function UserMenu() { // لا props
+  return <RenderBox name="UserMenu"><Avatar /></RenderBox>;
+}
+
+function Sidebar() {
+  return <RenderBox name="Sidebar"><UserMenu /></RenderBox>;
+}
+
+function Content() {
+  return <RenderBox name="Content">Posts</RenderBox>;
+}
+
+function Layout() {
+  return (
+    <RenderBox name="Layout">
+      <div className="row">
+        <Sidebar />
+        <Content />
+      </div>
+    </RenderBox>
+  );
+}
+
+function App() {
+  const rename = useUser((s) => s.rename); // دالة ثابتة
+  return (
+    <RenderBox name="App">
+      <button onClick={rename}>Rename</button>
+      <Layout />
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="Props: drilling (للمقارنة)" data-kind="bug">
+const NAMES = ['Sara', 'Omar', 'Lina'];
+const nextName = (n) => NAMES[(NAMES.indexOf(n) + 1) % 3];
+
+function Avatar({ user }) {
+  return <RenderBox name="Avatar">👤 {user}</RenderBox>;
+}
+
+function UserMenu({ user }) {
+  return (
+    <RenderBox name="UserMenu">
+      <Avatar user={user} />
+    </RenderBox>
+  );
+}
+
+function Sidebar({ user }) {
+  return (
+    <RenderBox name="Sidebar">
+      <UserMenu user={user} />
+    </RenderBox>
+  );
+}
+
+function Content() {
+  return <RenderBox name="Content">Posts</RenderBox>;
+}
+
+function Layout({ user }) {
+  return (
+    <RenderBox name="Layout">
+      <div className="row">
+        <Sidebar user={user} />
+        <Content />
+      </div>
+    </RenderBox>
+  );
+}
+
+function App() {
+  const [user, setUser] = useState('Sara');
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setUser(nextName)}>Rename</button>
+      <Layout user={user} />
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="الشجرتان جنبًا إلى جنب" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">مقارنة</p><h2>بعد ضغطة واحدة على Rename: من عمل رندر؟</h2></div>
+    <div class="grid-2">
+      <div class="diagram">
+        <h3>Props: الـ state في App <span class="tag bad">٦ رندرات</span></h3>
+        <div class="flow ptree mini">
+          <div class="fn has-state lit">App<span class="rr">رندر</span></div>
+          <div class="fa"><code>user</code></div>
+          <div class="fn lit">Layout<span class="rr">رندر</span></div>
+          <div class="fbranch">
+            <div class="flow">
+              <div class="fa"><code>user</code></div>
+              <div class="fn lit">Sidebar<span class="rr">رندر</span></div>
+              <div class="fa"><code>user</code></div>
+              <div class="fn lit">UserMenu<span class="rr">رندر</span></div>
+              <div class="fa"><code>user</code></div>
+              <div class="fn need lit">Avatar<span class="rr">رندر</span></div>
+            </div>
+            <div class="flow">
+              <div class="fa"></div>
+              <div class="fn lit">Content<span class="rr">رندر</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="diagram">
+        <h3>Zustand: الـ state خارج الشجرة <span class="tag good">رندر واحد</span></h3>
+        <div class="flow ptree mini">
+          <div class="fn">App<span class="rr zero">—</span></div>
+          <div class="fa"></div>
+          <div class="fn">Layout<span class="rr zero">—</span></div>
+          <div class="fbranch">
+            <div class="flow">
+              <div class="fa"></div>
+              <div class="fn">Sidebar<span class="rr zero">—</span></div>
+              <div class="fa"></div>
+              <div class="fn">UserMenu<span class="rr zero">—</span></div>
+              <div class="fa"></div>
+              <div class="fn need lit">Avatar<span class="rr">رندر</span></div>
+            </div>
+            <div class="flow">
+              <div class="fa"></div>
+              <div class="fn">Content<span class="rr zero">—</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="flow h"><div class="fn store">🐻 الـ store فيه <code>user</code></div><div class="fa"><span>اشتراك</span></div><div class="fn need">Avatar</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="جدول العدّ بعد ٥ ضغطات" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">النتيجة من المثال الحي</p><h2>عدّاد الرندر بعد ٥ ضغطات على Rename</h2></div>
+    <div class="cols cols-60">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>الكومبوننت</th><th>يحتاج <code>user</code>؟</th><th>Props (drilling)</th><th>Zustand (selector)</th></tr></thead>
+          <tbody>
+            <tr><td>App</td><td>لا</td><td class="n hot">6</td><td class="n cool">1</td></tr>
+            <tr><td>Layout</td><td>لا</td><td class="n hot">6</td><td class="n cool">1</td></tr>
+            <tr><td>Sidebar</td><td>لا</td><td class="n hot">6</td><td class="n cool">1</td></tr>
+            <tr><td>UserMenu</td><td>لا</td><td class="n hot">6</td><td class="n cool">1</td></tr>
+            <tr><td>Avatar</td><td>نعم ✓</td><td class="n">6</td><td class="n">6</td></tr>
+            <tr><td>Content</td><td>لا</td><td class="n hot">6</td><td class="n cool">1</td></tr>
+            <tr class="step"><td>المجموع</td><td></td><td class="n hot">36</td><td class="n cool">11</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:0.8rem">
+        <ul class="points">
+          <li>الرقم <b>1</b> هو رندر البداية. الباقي إعادات رندر.</li>
+          <li class="step">Props: <b>٣٠</b> إعادة رندر. Zustand: <b>٥</b> فقط.</li>
+          <li class="step"><code>Avatar</code> عمل ٦ في الحالتين. هذا هو الرندر <b>الضروري</b>. كل الفرق في الرندرات <b>غير الضرورية</b>.</li>
+        </ul>
+        <div class="rule step">مع الـ props، الـ state تعيش <b>أعلى</b> الشجرة، فيعيد الرندر كل ما تحتها. مع Zustand، الـ state <b>خارج</b> الشجرة، فيعيد الرندر فقط من اشترك وتغيّر ناتج الـ selector الخاص به.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ الجزء ٥ ============================ -->
+<section class="slide divider" id="part-5" data-title="الجزء ٥ · Context في المنتصف" data-part="5">
+  <div class="wrap">
+    <div class="part-num">٥</div>
+    <h1>Context في المنتصف</h1>
+    <p class="lead">React عنده حل مدمج للـ prop drilling. هل يحل مشكلة الرندر أيضًا؟ نصف الحل.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="Context: لا drilling، لكن…" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">Context</p><h2>Context يلغي الـ drilling، لكن لا يعرف الـ selectors</h2></div>
+    <div class="cols">
+      <script type="text/x-code">
+const UserCtx = createContext(null);
+
+function UserProvider({ children }) {
+  const [name, setName] = useState('Sara');
+  const [theme] = useState('dark');
+  return (
+    <UserCtx.Provider value={{ name, theme }}>
+      {children}
+    </UserCtx.Provider>
+  );
+}
+
+function ThemeBadge() {
+  // يقرأ theme فقط…
+  const { theme } = useContext(UserCtx);
+  // …لكنه يعيد الرندر عندما يتغير name أيضًا
+}
+      </script>
+      <ul class="points">
+        <li class="step">✅ لا تمرير عبر الطبقات: أي كومبوننت تحت الـ Provider يقرأ القيمة مباشرة.</li>
+        <li class="step">✅ الطبقات الوسطى لا تعيد الرندر، <b>بشرط</b> أن يستقبل الـ Provider الشجرة كـ <code>children</code> (سنرى السبب في الجزء ٦).</li>
+        <li class="step">❌ عندما تتغير الـ <code>value</code>، <b>كل</b> من يستدعي <code>useContext(UserCtx)</code> يعيد الرندر، حتى لو كان يستخدم جزءًا لم يتغير.</li>
+        <li class="step">❌ لا يوجد selector في Context. القيمة كلها أو لا شيء.</li>
+        <li class="step">لذلك Context ممتاز للقيم التي <b>نادرًا</b> ما تتغير: الثيم، اللغة، المستخدم المسجّل.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="مثال حي: Context ضد Zustand" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب</p><h2><code>ThemeBadge</code> لا يهتم بالاسم… فهل يعيد الرندر؟</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li class="step"><b>Context:</b> اضغط <b>Rename</b> ٣ مرات: <code>Avatar</code> و <code>ThemeBadge</code> و <code>RenameButton</code> عدّادها <b>4</b>. أما <code>App</code> و <code>Layout</code> فيبقيان <b>1</b>.</li>
+          <li class="step"><code>ThemeBadge</code> يقرأ <code>theme</code> فقط، و <code>theme</code> لم يتغير، ومع ذلك يعيد الرندر: كل مستهلك للـ context يعيد الرندر.</li>
+          <li class="step"><b>Zustand:</b> نفس الضغطات: <code>Avatar</code> عدّاده <b>4</b> وكل الباقي <b>1</b>. كل كومبوننت اختار بالـ selector الجزء الذي يهمه.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="Context" data-kind="bug">
+const NAMES = ['Sara', 'Omar', 'Lina'];
+const nextName = (n) => NAMES[(NAMES.indexOf(n) + 1) % 3];
+const UserCtx = createContext(null);
+
+function UserProvider({ children }) {
+  const [name, setName] = useState('Sara');
+  const [theme] = useState('dark');
+  const rename = () => setName(nextName);
+  return (
+    <UserCtx.Provider value={{ name, theme, rename }}>
+      {children}
+    </UserCtx.Provider>
+  );
+}
+
+function Avatar() {
+  const { name } = useContext(UserCtx);
+  return <RenderBox name="Avatar">👤 {name}</RenderBox>;
+}
+
+function ThemeBadge() {
+  const { theme } = useContext(UserCtx); // theme فقط
+  return <RenderBox name="ThemeBadge">🎨 {theme}</RenderBox>;
+}
+
+function RenameButton() {
+  const { rename } = useContext(UserCtx);
+  return (
+    <RenderBox name="RenameButton">
+      <button onClick={rename}>Rename</button>
+    </RenderBox>
+  );
+}
+
+function Layout() {
+  return (
+    <RenderBox name="Layout">
+      <RenameButton />
+      <div className="row"><Avatar /><ThemeBadge /></div>
+    </RenderBox>
+  );
+}
+
+function App() {
+  return (
+    <RenderBox name="App">
+      <UserProvider>
+        <Layout />
+      </UserProvider>
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="Zustand + selectors" data-kind="fix">
+const NAMES = ['Sara', 'Omar', 'Lina'];
+const nextName = (n) => NAMES[(NAMES.indexOf(n) + 1) % 3];
+
+const useUser = create((set) => ({
+  name: 'Sara',
+  theme: 'dark',
+  rename: () => set((s) => ({ name: nextName(s.name) })),
+}));
+
+function Avatar() {
+  const name = useUser((s) => s.name);
+  return <RenderBox name="Avatar">👤 {name}</RenderBox>;
+}
+
+function ThemeBadge() {
+  const theme = useUser((s) => s.theme); // ✅ theme فقط
+  return <RenderBox name="ThemeBadge">🎨 {theme}</RenderBox>;
+}
+
+function RenameButton() {
+  const rename = useUser((s) => s.rename);
+  return (
+    <RenderBox name="RenameButton">
+      <button onClick={rename}>Rename</button>
+    </RenderBox>
+  );
+}
+
+function Layout() {
+  return (
+    <RenderBox name="Layout">
+      <RenameButton />
+      <div className="row"><Avatar /><ThemeBadge /></div>
+    </RenderBox>
+  );
+}
+
+function App() {
+  return (
+    <RenderBox name="App">
+      <Layout />
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ الجزء ٦ ============================ -->
+<section class="slide divider" id="part-6" data-title="الجزء ٦ · حلول بدون مكتبة" data-part="6">
+  <div class="wrap">
+    <div class="part-num">٦</div>
+    <h1>حلول بدون مكتبة</h1>
+    <p class="lead">قبل أن تثبّت Zustand: ثلاث أدوات من React نفسه تقلّل الرندرات غير الضرورية.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="الحل ١: أنزِل الـ state" data-part="6">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الحل ١ · Colocation</p><h2>ضع الـ state بجانب من يستخدمها</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li class="step">🐞 <code>open</code> لا يحتاجها إلا <code>Menu</code>، لكنها في <code>App</code>. اضغط ☰ ٣ مرات: كل الصناديق <b>4</b>.</li>
+          <li class="step">✅ أنزلناها داخل <code>Menu</code>. نفس الضغطات: <code>Menu</code> عدّاده <b>4</b>، و <code>App</code> و <code>Feed</code> يبقيان <b>1</b>.</li>
+          <li class="step">القاعدة: ارفع الـ state فقط إلى <b>أقرب</b> أب مشترك، وليس أعلى من ذلك. أبسط وأسرع حل، وبدون أي مكتبة.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="🐞 الـ state عالية" data-kind="bug">
+function Menu({ open, onToggle }) {
+  return (
+    <RenderBox name="Menu">
+      <button onClick={onToggle}>☰</button>
+      {open && <span> Home · Lessons · Me</span>}
+    </RenderBox>
+  );
+}
+
+function Feed() {
+  return <RenderBox name="Feed">Post list</RenderBox>;
+}
+
+function App() {
+  const [open, setOpen] = useState(false); // ❌ عالية
+  return (
+    <RenderBox name="App">
+      <Menu open={open} onToggle={() => setOpen(!open)} />
+      <Feed />
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ أنزلناها" data-kind="fix">
+function Menu() {
+  const [open, setOpen] = useState(false); // ✅ هنا
+  return (
+    <RenderBox name="Menu">
+      <button onClick={() => setOpen(!open)}>☰</button>
+      {open && <span> Home · Lessons · Me</span>}
+    </RenderBox>
+  );
+}
+
+function Feed() {
+  return <RenderBox name="Feed">Post list</RenderBox>;
+}
+
+function App() {
+  return (
+    <RenderBox name="App">
+      <Menu />
+      <Feed />
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="الحل ٢: مرّر الكومبوننتات كـ children" data-part="6">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الحل ٢ · Composition</p><h2>مرّر الكومبوننت كـ <code>children</code> بدل أن تنشئه في الداخل</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li class="step">🐞 <code>ThemeFrame</code> عنده state، و <code>&lt;Feed /&gt;</code> مكتوب داخله. اضغط 🌓 ٣ مرات: <code>ThemeFrame</code> و <code>Feed</code> عدّادها <b>4</b>.</li>
+          <li class="step">✅ <code>App</code> هو من ينشئ <code>&lt;Feed /&gt;</code> ويعطيه لـ <code>ThemeFrame</code> كـ <code>children</code>. نفس الضغطات: <code>ThemeFrame</code> عدّاده <b>4</b> و <code>Feed</code> عدّاده <b>1</b>.</li>
+          <li class="step">لماذا؟ الـ <code>children</code> عنصر صنعه <code>App</code>، و <code>App</code> لم يعمل رندر، فهو <b>نفس العنصر</b> تمامًا. React يرى أنه لم يتغير فيتخطاه.</li>
+          <li class="step">هذا بالضبط ما يجعل <code>UserProvider</code> في الجزء ٥ لا يعيد رندر <code>Layout</code>.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="🐞 Feed داخل الإطار" data-kind="bug">
+function Feed() {
+  return <RenderBox name="Feed">Post list</RenderBox>;
+}
+
+function ThemeFrame() { // ❌ ينشئ Feed بنفسه
+  const [dark, setDark] = useState(false);
+  return (
+    <RenderBox name="ThemeFrame">
+      <button onClick={() => setDark(!dark)}>🌓</button>
+      <div className={dark ? 'dark' : 'light'}>
+        <Feed />
+      </div>
+    </RenderBox>
+  );
+}
+
+function App() {
+  return <RenderBox name="App"><ThemeFrame /></RenderBox>;
+}
+</script>
+<script type="text/x-snippet" data-label="✅ Feed كـ children" data-kind="fix">
+function Feed() {
+  return <RenderBox name="Feed">Post list</RenderBox>;
+}
+
+function ThemeFrame({ children }) { // ✅ يعرض children
+  const [dark, setDark] = useState(false);
+  return (
+    <RenderBox name="ThemeFrame">
+      <button onClick={() => setDark(!dark)}>🌓</button>
+      <div className={dark ? 'dark' : 'light'}>
+        {children}
+      </div>
+    </RenderBox>
+  );
+}
+
+function App() {
+  return (
+    <RenderBox name="App">
+      <ThemeFrame>
+        <Feed />
+      </ThemeFrame>
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="الحل ٣: React.memo وفخّه" data-part="6">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الحل ٣ · memo</p><h2><code>memo</code> يقارن الـ props… ويخدعه أي object جديد</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li class="step">١ 🐞 بدون <code>memo</code>: اضغط <b>Like</b> ٣ مرات ← <code>Avatar</code> عدّاده <b>4</b> رغم أن <code>name</code> لم يتغير.</li>
+          <li class="step">٢ ✅ <code>memo(Avatar)</code>: يقارن كل prop بـ <code>Object.is</code>. كلها نفسها؟ يتخطى ← <code>Avatar</code> عدّاده <b>1</b>.</li>
+          <li class="step">٣ 🐞 الفخ: <code>style={{…}}</code> و <code>() =&gt; …</code> تُنشأ <b>من جديد</b> في كل رندر، فلا تكون "نفسها" أبدًا ← <code>Avatar</code> عدّاده <b>4</b> مرة أخرى.</li>
+          <li class="step">٤ ✅ <code>useMemo</code> و <code>useCallback</code> يرجعان <b>نفس</b> الـ object والدالة حتى تتغير الـ deps ← <code>Avatar</code> عدّاده <b>1</b>.</li>
+          <li class="step">ملاحظة: <code>App</code> نفسه يعيد الرندر في كل الحالات. <code>memo</code> يحمي الابن فقط.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="١ بدون memo" data-kind="bug">
+function Avatar({ name }) {
+  return <RenderBox name="Avatar">👤 {name}</RenderBox>;
+}
+
+function App() {
+  const [likes, setLikes] = useState(0);
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setLikes(likes + 1)}>
+        Like {likes}
+      </button>
+      <Avatar name="Sara" />
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="٢ memo" data-kind="fix">
+const Avatar = memo(function Avatar({ name }) {
+  return <RenderBox name="Avatar">👤 {name}</RenderBox>;
+});
+
+function App() {
+  const [likes, setLikes] = useState(0);
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setLikes(likes + 1)}>
+        Like {likes}
+      </button>
+      <Avatar name="Sara" />
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="٣ memo + object جديد" data-kind="bug">
+const Avatar = memo(function Avatar({ name, style, onPick }) {
+  return (
+    <RenderBox name="Avatar">
+      <span style={style} onClick={onPick}>👤 {name}</span>
+    </RenderBox>
+  );
+});
+
+function App() {
+  const [likes, setLikes] = useState(0);
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setLikes(likes + 1)}>
+        Like {likes}
+      </button>
+      <Avatar
+        name="Sara"
+        style={{ color: 'tomato' }} // ❌ object جديد
+        onPick={() => console.log('pick')} // ❌ دالة جديدة
+      />
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="٤ useMemo + useCallback" data-kind="fix">
+const Avatar = memo(function Avatar({ name, style, onPick }) {
+  return (
+    <RenderBox name="Avatar">
+      <span style={style} onClick={onPick}>👤 {name}</span>
+    </RenderBox>
+  );
+});
+
+function App() {
+  const [likes, setLikes] = useState(0);
+  // ✅ نفس الـ object ونفس الدالة في كل رندر
+  const style = useMemo(() => ({ color: 'tomato' }), []);
+  const onPick = useCallback(() => console.log('pick'), []);
+  return (
+    <RenderBox name="App">
+      <button onClick={() => setLikes(likes + 1)}>
+        Like {likes}
+      </button>
+      <Avatar name="Sara" style={style} onPick={onPick} />
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ الجزء ٧ ============================ -->
+<section class="slide divider" id="part-7" data-title="الجزء ٧ · أخطاء Zustand" data-part="7">
+  <div class="wrap">
+    <div class="part-num">٧</div>
+    <h1>أخطاء Zustand الشائعة</h1>
+    <p class="lead">Zustand يقلّل الرندرات فقط إذا استخدمنا الـ selector بشكل صحيح. خطآن نراهما كثيرًا.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="خطأ ١: الاشتراك في الـ store كله" data-part="7">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">خطأ ١</p><h2><code>useApp()</code> بدون selector = اشتراك في كل شيء</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li class="step">🐞 <code>Avatar</code> يحتاج <code>name</code> فقط، لكنه كتب <code>useApp()</code>. اضغط <b>Notify</b> ٣ مرات: <code>Avatar</code> عدّاده <b>4</b> رغم أن الاسم لم يتغير.</li>
+          <li class="step">بدون selector، الناتج هو الـ state <b>كلها</b>، وهي object جديد مع كل <code>set</code>. إذن: "تغيّر" ← رندر.</li>
+          <li class="step">✅ <code>useApp((s) =&gt; s.name)</code>: نفس الضغطات، <code>Avatar</code> عدّاده <b>1</b> و <code>Bell</code> عدّاده <b>4</b>.</li>
+          <li class="step">الـ destructuring لا يساعد: <code>const { name } = useApp()</code> ما زال يشترك في الكل.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="🐞 بدون selector" data-kind="bug">
+const useApp = create((set) => ({
+  name: 'Sara',
+  unread: 0,
+  ping: () => set((s) => ({ unread: s.unread + 1 })),
+}));
+
+function Avatar() {
+  const { name } = useApp(); // ❌ كل الـ store
+  return <RenderBox name="Avatar">👤 {name}</RenderBox>;
+}
+
+function Bell() {
+  const unread = useApp((s) => s.unread);
+  return <RenderBox name="Bell">🔔 {unread}</RenderBox>;
+}
+
+function App() {
+  const ping = useApp((s) => s.ping);
+  return (
+    <RenderBox name="App">
+      <button onClick={ping}>Notify</button>
+      <div className="row"><Avatar /><Bell /></div>
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ مع selector" data-kind="fix">
+const useApp = create((set) => ({
+  name: 'Sara',
+  unread: 0,
+  ping: () => set((s) => ({ unread: s.unread + 1 })),
+}));
+
+function Avatar() {
+  const name = useApp((s) => s.name); // ✅ name فقط
+  return <RenderBox name="Avatar">👤 {name}</RenderBox>;
+}
+
+function Bell() {
+  const unread = useApp((s) => s.unread);
+  return <RenderBox name="Bell">🔔 {unread}</RenderBox>;
+}
+
+function App() {
+  const ping = useApp((s) => s.ping);
+  return (
+    <RenderBox name="App">
+      <button onClick={ping}>Notify</button>
+      <div className="row"><Avatar /><Bell /></div>
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="خطأ ٢: selector يرجع object جديد" data-part="7">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">خطأ ٢</p><h2>selector يرجع <code>{ }</code> جديدًا ← حلقة لا نهائية</h2></div>
+    <div class="runner">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li class="step">🐞 <code>(s) =&gt; ({ name: s.name, unread: s.unread })</code> يصنع object <b>جديدًا</b> في كل مرة يُستدعى فيها.</li>
+          <li class="step">Zustand يقارن بـ <code>Object.is</code>: الجديد ≠ القديم دائمًا ← "تغيّر!" ← رندر ← object جديد ← … حتى يوقفها React بخطأ <code>Maximum update depth exceeded</code> وينهار التطبيق (انظر الكونسول).</li>
+          <li class="step">✅ الحل الأبسط: selector منفصل لكل قيمة. كل واحد يرجع قيمة بسيطة تُقارن بشكل صحيح.</li>
+          <li class="step">✅ أو <code>useShallow</code> من Zustand (الشريحة التالية).</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="🐞 object جديد" data-kind="bug">
+const useApp = create((set) => ({
+  name: 'Sara',
+  unread: 0,
+  ping: () => set((s) => ({ unread: s.unread + 1 })),
+}));
+
+function Profile() {
+  // ❌ object جديد في كل استدعاء
+  const { name, unread } = useApp((s) => ({
+    name: s.name,
+    unread: s.unread,
+  }));
+  return <RenderBox name="Profile">{name} 🔔 {unread}</RenderBox>;
+}
+
+function App() {
+  return <Profile />;
+}
+</script>
+<script type="text/x-snippet" data-label="✅ selectors منفصلة" data-kind="fix">
+const useApp = create((set) => ({
+  name: 'Sara',
+  unread: 0,
+  ping: () => set((s) => ({ unread: s.unread + 1 })),
+}));
+
+function Profile() {
+  const name = useApp((s) => s.name); // ✅ قيمة بسيطة
+  const unread = useApp((s) => s.unread); // ✅ قيمة بسيطة
+  const ping = useApp((s) => s.ping);
+  return (
+    <RenderBox name="Profile">
+      {name} 🔔 {unread}
+      <button onClick={ping}>Notify</button>
+    </RenderBox>
+  );
+}
+
+function App() {
+  return <Profile />;
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="useShallow" data-part="7">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الحل في مشروع حقيقي</p><h2>ثلاث طرق لقراءة أكثر من قيمة</h2></div>
+    <div class="cols">
+      <script type="text/x-code">
+import { create } from 'zustand';
+import { useShallow } from 'zustand/react/shallow';
+
+// ❌ object جديد كل مرة: حلقة في v5
+const p = useApp((s) => ({ name: s.name, n: s.unread }));
+
+// ✅ ١: selector لكل قيمة
+const name = useApp((s) => s.name);
+const unread = useApp((s) => s.unread);
+
+// ✅ ٢: useShallow يقارن المفاتيح واحدًا واحدًا
+const { name, unread } = useApp(
+  useShallow((s) => ({ name: s.name, unread: s.unread }))
+);
+
+// ✅ ٣: مصفوفة مع useShallow أيضًا
+const [name, unread] = useApp(
+  useShallow((s) => [s.name, s.unread])
+);
+      </script>
+      <ul class="points">
+        <li class="step"><code>useShallow</code> يقارن <b>محتوى</b> الـ object (مفتاحًا مفتاحًا) بدل المرجع. نفس القيم؟ يرجع الـ object القديم نفسه ← لا رندر.</li>
+        <li class="step">في Zustand v4 كان الخطأ ٢ يسبّب رندرات زائدة فقط. في <b>v5</b> صار حلقة لا نهائية، لأنه يستخدم <code>useSyncExternalStore</code> مثل نسختنا المصغّرة.</li>
+        <li class="step">القاعدة: الـ selector يرجع <b>قيمة موجودة</b> في الـ store، لا قيمة جديدة يصنعها.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ الجزء ٨ ============================ -->
+<section class="slide divider" id="part-8" data-title="الجزء ٨ · الخلاصة" data-part="8">
+  <div class="wrap">
+    <div class="part-num">٨</div>
+    <h1>الخلاصة</h1>
+    <p class="lead">متى نستخدم ماذا؟ وهل الرندر الزائد مشكلة أصلًا؟</p>
+  </div>
+</section>
+
+<section class="slide" data-title="جدول المقارنة" data-part="8">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الملخّص</p><h2>من يعيد الرندر عندما تتغير القيمة؟</h2></div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>الطريقة</th><th>أين تعيش الـ state؟</th><th>من يعيد الرندر؟</th><th>متى نستخدمها؟</th></tr></thead>
+        <tbody>
+          <tr class="step"><td>Props</td><td>في أقرب أب مشترك</td><td>صاحب الـ state <b>وكل الشجرة تحته</b>، حتى من لا يستخدمها</td><td><b>الافتراضي.</b> بيانات بين أب وأبناء قريبين</td></tr>
+          <tr class="step"><td>Context</td><td>في Provider</td><td><b>كل</b> من يقرأ الـ context، حتى لو استخدم جزءًا لم يتغير</td><td>قيم نادرًا ما تتغير: الثيم، اللغة، المستخدم المسجّل</td></tr>
+          <tr class="step"><td>Zustand</td><td>خارج React</td><td>فقط من <b>تغيّر ناتج الـ selector</b> الخاص به</td><td>state مشتركة بين أماكن بعيدة، أو تتغير كثيرًا</td></tr>
+          <tr class="step"><td><code>memo</code></td><td>(أداة إضافية)</td><td>يتخطى الابن إذا كانت كل الـ props نفسها <span class="en">(Object.is)</span></td><td>كومبوننت ثقيل، مع <code>useMemo</code> / <code>useCallback</code></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div class="rule step">الـ props لا تسبّب الرندر بنفسها. المشكلة أن الـ state المشتركة مع الـ props يجب أن تعيش <b>عاليًا</b>، ورندر الأب يجرّ كل ما تحته.</div>
+  </div>
+</section>
+
+<section class="slide" data-title="هل الرندر الزائد مشكلة؟" data-part="8">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">كلمة صريحة</p><h2>لا تخافوا من الرندر</h2></div>
+    <div class="cols">
+      <ul class="points">
+        <li class="step">الرندر = استدعاء دوال JavaScript. React يقارن الناتج ويغيّر في الـ DOM <b>فقط</b> ما تغيّر فعلًا.</li>
+        <li class="step">في أغلب التطبيقات، الرندرات "الزائدة" <b>رخيصة جدًا</b> ولن يلاحظها أحد.</li>
+        <li class="step">تصبح مشكلة عندما: الشجرة كبيرة، أو التحديث <b>متكرر</b> (كتابة، سحب، مؤقت)، أو كومبوننت <b>ثقيل</b> (قائمة طويلة، رسم بياني).</li>
+        <li class="step"><b>قِس قبل أن تحسّن:</b> React DevTools ← Profiler، وفعّل خيار <span class="ltr">Highlight updates</span> لترى الوميض مثل <code>RenderBox</code>.</li>
+      </ul>
+      <div style="display:flex;flex-direction:column;gap:0.6rem">
+        <h3>ترتيب الأدوات</h3>
+        <ol class="checklist">
+          <li class="step"><span>ابدأ بـ <b>الـ props</b>. هي الطريقة الطبيعية والأوضح.</span></li>
+          <li class="step"><span><b>أنزِل الـ state</b> أو مرّر <b>children</b> إذا رأيت رندرات زائدة.</span></li>
+          <li class="step"><span><b>Context</b> للقيم العامة التي نادرًا ما تتغير.</span></li>
+          <li class="step"><span><b>Store</b> مثل Zustand للـ state المشتركة بين أماكن بعيدة أو المتغيرة كثيرًا.</span></li>
+          <li class="step"><span><code>memo</code> لكومبوننت ثقيل، بعد أن تقيس.</span></li>
+        </ol>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="اختبار سريع" data-part="8">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">اختبار · اضغط البطاقة لتقلبها</p><h2>هل يعيد الرندر؟</h2></div>
+    <div class="flips">
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">١ · الأب غيّر الـ state الخاصة به</span><code class="hl">&lt;Header /&gt; // بلا props</code></span>
+        <span class="face back"><span class="ans bad">نعم، يعيد الرندر</span><span class="exp">رندر الأب يعيد رندر كل الأبناء، بـ props أو بدونها (إلا مع <code>memo</code>).</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">٢ · الأب عمل رندر و user لم يتغير</span><code class="hl">&lt;Avatar user={user} /&gt;</code></span>
+        <span class="face back"><span class="ans bad">نعم، يعيد الرندر</span><span class="exp">React لا يقارن الـ props افتراضيًا. السبب هو رندر الأب.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">٣ · Avatar ملفوف بـ memo</span><code class="hl">&lt;Avatar onPick={() =&gt; go()} /&gt;</code></span>
+        <span class="face back"><span class="ans bad">نعم، يعيد الرندر</span><span class="exp">دالة جديدة في كل رندر، فـ <code>memo</code> يراها مختلفة. الحل: <code>useCallback</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">٤ · تغيّر unread في الـ store</span><code class="hl">const { name } = useApp();</code></span>
+        <span class="face back"><span class="ans bad">نعم، يعيد الرندر</span><span class="exp">بدون selector يشترك في الـ store كله. اكتب <code>useApp((s) =&gt; s.name)</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">٥ · تغيّر name في الـ context</span><code class="hl">const { theme } = useContext(Ctx);</code></span>
+        <span class="face back"><span class="ans bad">نعم، يعيد الرندر</span><span class="exp">كل مستهلك للـ context يعيد الرندر عندما تتغير الـ value، أيًّا كان الجزء الذي يستخدمه.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">٦ · تغيّر unread في الـ store</span><code class="hl">const name = useApp((s) =&gt; s.name);</code></span>
+        <span class="face back"><span class="ans good">لا، لا يعيد الرندر ✓</span><span class="exp">ناتج الـ selector (<code>name</code>) لم يتغير، فلا رندر.</span></span>
+      </span></button>
+    </div>
+  </div>
+</section>
+
+<section class="slide title-slide" data-title="الختام" data-part="8">
+  <div class="wrap">
+    <p class="kicker">الخلاصة في جملتين</p>
+    <h1>الكومبوننت يعيد الرندر لأن <span class="react-word">أباه</span> عمل رندر، لا لأن الـ props تغيّرت.</h1>
+    <p class="lead">مع الـ props تعيش الـ state عاليًا فتعيد الشجرة كلها الرندر. مع Zustand تعيش خارج الشجرة، فيعيد الرندر فقط من اشترك بـ selector تغيّر ناتجه.</p>
+    <p class="hint">التالي: <a href="state.html">عرض الـ State</a> · <a href="auth.html">عرض الـ Auth</a></p>
+  </div>
+</section>
+
+</main>
+
+<div class="progress"><div id="progress-bar"></div></div>
+<div class="pager">
+  <button id="prev" title="السابق (→)" aria-label="السابق">→</button>
+  <button id="next" title="التالي (←)" aria-label="التالي">←</button>
+</div>
+<dialog id="overview">
+  <div class="ov-head"><h2>كل الشرائح</h2><button class="icon-btn ov-close" aria-label="إغلاق">✕</button></div>
+  <div class="ov-grid"></div>
+</dialog>
+
+<script>window.DECK = { id: 'props', parts: { 1: 'الجزء ١ · ما هي الـ Props؟', 2: 'الجزء ٢ · متى يعيد الكومبوننت الرندر؟', 3: 'الجزء ٣ · الـ Prop drilling وسلسلة الرندر', 4: 'الجزء ٤ · نفس التطبيق مع Zustand', 5: 'الجزء ٥ · Context في المنتصف', 6: 'الجزء ٦ · حلول بدون مكتبة', 7: 'الجزء ٧ · أخطاء Zustand', 8: 'الجزء ٨ · الخلاصة' } };</script>
+<script src="vendor/react.development.js"></script>
+<script src="vendor/react-dom.development.js"></script>
+<script src="vendor/babel.min.js"></script>
+<script src="shared/js/common.js"></script>
+<script src="shared/js/diagrams.js"></script>
+<script src="shared/js/runner.js"></script>
+<script src="shared/js/deck.js"></script>
+<script>
+  // بطاقات الاختبار: اضغط لتقلب
+  document.querySelectorAll('.flip').forEach((card) => card.addEventListener('click', () => card.classList.toggle('flipped')));
+</script>
+</body>
+</html>

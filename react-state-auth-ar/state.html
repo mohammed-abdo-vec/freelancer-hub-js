@@ -1,0 +1,1355 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>الـ State في React</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;600;700&display=swap">
+  <link rel="stylesheet" href="shared/css/deck.css">
+  <style>
+    /* إضافات خاصة بهذا العرض فقط */
+    /* النص العربي داخل الكود: خط عربي احتياطي بعد الخط الـ monospace، حتى تتصل الحروف */
+    :root { --mono: ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, "IBM Plex Sans Arabic", "Geeza Pro", monospace; }
+    .flow.compact .fa { min-height: 1.45rem; margin: 0.1rem 0 0.3rem; }
+    .flow.compact .fa:not(:empty) { min-height: 1.9rem; }
+    .flow.compact .fn { padding: 0.32rem 0.9rem; }
+    .formula.ltr-f { direction: ltr; justify-content: center; }
+
+    /* شجرة الكومبوننتات (الخطوط تُرسم بالسكربت في أسفل الصفحة) */
+    .tree-stage { gap: 1.9rem; padding: 1rem 0.7rem 1.5rem; }
+    .tree-lines path { stroke: var(--muted); }
+    .tree-lines path.drill { stroke: var(--p3); stroke-width: 3; }
+    .tree-lines path.link { stroke: var(--p4); stroke-width: 3; stroke-dasharray: 7 5; }
+    .tree-lines path.sub { stroke: var(--p2); stroke-width: 2.5; stroke-dasharray: 6 5; }
+    .tree-lines marker path { stroke: none; }
+    .edge-label {
+      position: absolute; z-index: 2; transform: translate(-50%, -50%); background: var(--surface);
+      border: 1px solid var(--line); border-radius: 6px; padding: 0 0.45rem; font-size: 0.72rem;
+      white-space: nowrap; unicode-bidi: plaintext; font-weight: 700;
+    }
+    .edge-label.down { color: var(--react-deep); border-color: var(--react-deep); }
+    .edge-label.up { color: var(--p3); border-color: var(--p3); }
+    .edge-label.ctx { color: var(--p4); border-color: var(--p4); }
+    .edge-label.sub { color: var(--p2); border-color: var(--p2); }
+    .tnode.store-node { border-color: var(--p2); background: color-mix(in srgb, var(--p2) 12%, var(--surface)); }
+    .tnode.ctx-node { border-color: var(--p4); background: color-mix(in srgb, var(--p4) 10%, var(--surface)); }
+    .tnode small code { font-size: 0.95em; }
+    .wide-tree { gap: 3.4rem; padding-block: 1.4rem; }
+    .wide-tree .tree-row { gap: 4rem; }
+    .tnode.pass::after { background: var(--surface); padding: 0 0.3rem; border-radius: 4px; }
+    .runner.roomy .r-preview { max-height: 24rem; }
+    .wide-tree.three .tree-row { gap: 1.6rem; }
+    .legend { display: flex; gap: 0.5rem 1.2rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--muted); justify-content: center; }
+
+    /* سلّم القرار: سؤال ← نعم ← النتيجة، و"لا" تنزل للسؤال التالي */
+    .ladder { display: flex; flex-direction: column; align-items: center; }
+    .lrow { display: grid; grid-template-columns: 23rem 6rem 17rem; align-items: center; }
+    .lrow .fn { width: 100%; max-width: none; }
+    .lno { display: grid; grid-template-columns: 23rem 6rem 17rem; }
+    .lno .fa { justify-self: center; margin: 0.1rem 0 0.35rem; min-height: 1.7rem; }
+    .harrow { height: 2px; background: var(--fix); position: relative; margin: 0 0.5rem 0 0.7rem; }
+    .harrow::after { content: ""; position: absolute; left: -8px; top: 50%; transform: translateY(-50%); border: 7px solid transparent; border-right: 9px solid var(--fix); border-left: 0; }
+    .harrow span { position: absolute; bottom: 0.3rem; left: 50%; transform: translateX(-50%); color: var(--fix); font-weight: 800; font-size: 0.78rem; }
+    .lrow .fn.decision { text-align: start; }
+
+    /* جداول صغيرة لشرح الطابور */
+    .qtable td, .qtable th { padding: 0.35rem 0.7rem; }
+    .qtable td:first-child { font-weight: 400; }
+    .qtable tfoot td { font-weight: 800; background: var(--surface-2); }
+    .cmp td:first-child { white-space: nowrap; }
+    .cmp td { font-size: 0.86rem; }
+    .cmp th { font-size: 0.9rem; color: var(--ink); }
+    .cmp th.c-state { border-top: 4px solid var(--p1); }
+    .cmp th.c-ctx { border-top: 4px solid var(--p4); }
+    .cmp th.c-zu { border-top: 4px solid var(--p2); }
+    .small-note { font-size: 0.85rem; color: var(--muted); }
+    .flips.six .flip { min-height: 9.5rem; }
+    .end-links { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0.8rem; max-width: 46rem; }
+    .end-links a { display: block; text-decoration: none; color: inherit; background: var(--surface); border: 1px solid var(--line); border-top: 6px solid var(--c); border-radius: var(--radius); padding: 0.8rem 1rem; box-shadow: var(--shadow); }
+    .end-links a:hover { border-color: var(--c); }
+    .end-links b { color: var(--c); }
+  </style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">
+    <svg class="brand-logo" viewBox="-11.5 -10.23 23 20.46" aria-hidden="true"><circle r="2.05" fill="#61dafb"/><g stroke="#61dafb" stroke-width="1" fill="none"><ellipse rx="11" ry="4.2"/><ellipse rx="11" ry="4.2" transform="rotate(60)"/><ellipse rx="11" ry="4.2" transform="rotate(120)"/></g></svg>
+    <a class="home brand-name" href="index.html">→ كل العروض</a>
+  </div>
+  <div class="part-label" id="part-label"></div>
+  <div class="controls">
+    <button class="icon-btn" id="overview-btn" title="كل الشرائح (O)" aria-label="كل الشرائح">☰</button>
+    <button class="icon-btn" id="theme-btn" title="فاتح / داكن (T)" aria-label="تبديل الثيم">◐</button>
+    <button class="icon-btn" id="fs-btn" title="ملء الشاشة (F)" aria-label="ملء الشاشة">⛶</button>
+    <span class="counter" id="counter"></span>
+  </div>
+</header>
+
+<main class="deck" id="deck">
+
+<!-- ======================================================================
+     العنوان والفهرس
+     ====================================================================== -->
+<section class="slide title-slide" data-title="العنوان" data-part="0">
+  <div class="wrap">
+    <p class="kicker">React · الجلسة: إدارة الـ State</p>
+    <h1>الـ <span class="react-word">State</span> في React</h1>
+    <p class="lead">من <code>useState</code> داخل كومبوننت واحد، إلى Context، إلى store كامل مع Zustand. ومتى نستخدم كل واحد منها.</p>
+    <p class="hint">اضغط <kbd>←</kbd> للبدء · <kbd>O</kbd> كل الشرائح · <kbd>R</kbd> أعد تشغيل الكود · <kbd>T</kbd> الثيم · <kbd>F</kbd> ملء الشاشة</p>
+  </div>
+</section>
+
+<section class="slide" data-title="خطة الجلسة" data-part="0">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">خطة الجلسة</p><h2>خمسة أجزاء، من الأبسط إلى الأكبر</h2></div>
+    <div class="agenda">
+      <a href="#" data-goto="#part-1" style="--c: var(--p1)"><div class="num">١</div><h3>ما هو الـ State؟</h3><p>لماذا لا يكفي متغير عادي، دورة الرندر، الـ snapshot، وعدم التعديل المباشر.</p></a>
+      <a href="#" data-goto="#part-2" style="--c: var(--p2)"><div class="num">٢</div><h3>مشاركة الـ State</h3><p>كومبوننتان يحتاجان نفس القيمة: نرفع الـ state للأب.</p></a>
+      <a href="#" data-goto="#part-3" style="--c: var(--p3)"><div class="num">٣</div><h3>Context</h3><p>نتخلّص من الـ prop drilling، ونعرف متى يعيد المستهلكون الرندر.</p></a>
+      <a href="#" data-goto="#part-4" style="--c: var(--p4)"><div class="num">٤</div><h3>Zustand</h3><p>store خارج React، والـ selectors، و<code>getState()</code>، و<code>persist</code>.</p></a>
+      <a href="#" data-goto="#part-5" style="--c: var(--p5)"><div class="num">٥</div><h3>أين أضع الـ State؟</h3><p>جدول مقارنة ومخطط قرار تستخدمه في كل مشروع.</p></a>
+    </div>
+    <p class="rule step">كل مثال كود في هذا العرض هو <b>React حقيقي يعمل داخل الصفحة</b>. اضغط الأزرار في المعاينة، أو <b>✎ تعديل</b> لتغيير الكود وتجربته مباشرة.</p>
+  </div>
+</section>
+
+<!-- ======================================================================
+     الجزء ١ · ما هو الـ State؟
+     ====================================================================== -->
+<section class="slide divider" id="part-1" data-title="الجزء ١: ما هو الـ State؟" data-part="1">
+  <div class="wrap">
+    <div class="part-num">١</div>
+    <h1>ما هو الـ State؟</h1>
+    <p class="lead">بيانات تتغير مع الوقت، وعندما تتغير يجب أن تتغير الشاشة معها.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="متغير عادي أم useState؟" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب</p><h2>لماذا لا يكفي متغير <code>let</code> عادي؟</h2></div>
+    <div class="runner roomy">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>في تبويب <b>❌ let</b> اضغط <b>أضف 1</b> عدة مرات: الكونسول يعدّ 1، 2، 3… لكن الشاشة تبقى <b>0</b>.</li>
+          <li>السبب: React <b>لا يعرف</b> أن المتغير تغيّر، فلا يعيد الرندر.</li>
+          <li>ولو حصل رندر لأي سبب، فالسطر <code>let count = 0</code> يعمل من جديد ويرجع الصفر.</li>
+          <li>في تبويب <b>✅ useState</b>: React يحفظ القيمة <b>بين الرندرات</b>، و<code>setCount</code> تطلب رندر جديد.</li>
+          <li class="muted">لاحظ أن الكونسول في ✅ يطبع القيمة <b>القديمة</b>. سنفهم السبب بعد قليل.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="❌ let" data-kind="bug">
+function App() {
+  let count = 0; // متغير عادي
+
+  function handleClick() {
+    count = count + 1;
+    console.log('count =', count);
+  }
+
+  return (
+    <div className="stack">
+      <p className="big">{count}</p>
+      <button onClick={handleClick}>أضف 1</button>
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ useState" data-kind="fix">
+function App() {
+  const [count, setCount] = useState(0);
+
+  function handleClick() {
+    setCount(count + 1); // اطلب رندر جديد
+    console.log('count =', count);
+  }
+
+  return (
+    <div className="stack">
+      <p className="big">{count}</p>
+      <button onClick={handleClick}>أضف 1</button>
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="UI = f(state)" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الفكرة الأساسية</p><h2>الواجهة هي ناتج دالة تأخذ الـ state</h2></div>
+    <div class="formula ltr-f">
+      <span>UI</span><span>=</span><span><span class="fx">f</span>(<span class="pill">state</span>)</span>
+    </div>
+    <div class="grid-3">
+      <div class="card accent step"><h3>🧠 الـ state = ذاكرة</h3><p>قيمة يحفظها React للكومبوننت <b>بين الرندرات</b>. المتغيرات العادية تُنسى بعد كل رندر.</p></div>
+      <div class="card accent step"><h3>🔁 الكومبوننت = دالة</h3><p>في كل رندر يستدعي React الدالة <code>App()</code> من جديد، وهي ترجع JSX يصف الشاشة <b>الآن</b>.</p></div>
+      <div class="card accent step"><h3>📣 setState = طلب</h3><p><code>setCount(5)</code> لا تغيّر الشاشة بنفسها. هي تقول لـ React: «القيمة تغيّرت، أعد الرندر».</p></div>
+    </div>
+    <p class="rule big step">نحن لا نغيّر الشاشة بأيدينا. نغيّر الـ state، وReact يرسم الشاشة من جديد.<small>نفس الـ state يعطي دائمًا نفس الواجهة. لذلك سؤالنا في كل التطبيق: أين تعيش هذه القيمة؟</small></p>
+  </div>
+</section>
+
+<section class="slide" data-title="دورة الرندر" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">مخطط</p><h2>ماذا يحدث بعد <code>setCount</code>؟</h2></div>
+    <div class="cols cols-60">
+      <div class="diagram">
+        <h3>دورة الرندر <span class="en">(render cycle)</span></h3>
+        <div class="flow compact">
+          <div class="fn start">المستخدم يضغط الزر <small style="color:inherit;opacity:.85">event</small></div>
+          <div class="fa"><code>setCount(1)</code></div>
+          <div class="fn react step">React يسجّل التحديث ويجدول رندر <small>لا شيء يتغير فورًا</small></div>
+          <div class="fa step"></div>
+          <div class="fn react step">إعادة الرندر: يستدعي <code>App()</code> من جديد <small>هذه المرة <code>useState</code> ترجع 1</small></div>
+          <div class="fa step"></div>
+          <div class="fn decision step">يقارن الـ JSX الجديد بالقديم <small>ما الذي تغيّر فعلًا؟</small></div>
+          <div class="fa step"></div>
+          <div class="fn ok step">commit: يحدّث في الـ DOM الأجزاء المتغيرة فقط</div>
+        </div>
+      </div>
+      <div class="stack" style="display:flex;flex-direction:column;gap:.8rem">
+        <div class="card step"><h3>الرندر ≠ تحديث الـ DOM</h3><p>«رندر» يعني فقط: React استدعى دالة الكومبوننت. تعديل الـ DOM يحدث في النهاية، وفقط إذا تغيّر شيء.</p></div>
+        <div class="card step"><h3>من يعيد الرندر؟</h3><p>الكومبوننت صاحب الـ state، <b>وكل أبنائه</b> تحته افتراضيًا.</p><p class="small-note">التفاصيل والأرقام في <a href="props.html">عرض الـ Props وإعادة الرندر</a>.</p></div>
+        <div class="card step"><h3>نفس القيمة؟</h3><p>إذا كانت القيمة الجديدة تساوي القديمة حسب <code>Object.is</code>، يتخطى React الرندر.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="الـ State لقطة (snapshot)" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب</p><h2>الـ state لقطة ثابتة <span class="en">(snapshot)</span> داخل كل رندر</h2></div>
+    <div class="runner roomy">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>اضغط <b>أضف 3</b> في تبويب <b>❌</b>: الرقم يزيد <b>1</b> فقط.</li>
+          <li>داخل هذا الرندر، <code>count</code> ثابت. الأسطر الثلاثة كلها تقول «اجعلها 0 + 1».</li>
+          <li>في تبويب <b>✅</b> نمرّر <b>دالة</b>: «خذ آخر قيمة وزد 1». React ينفّذها بالترتيب: 0←1←2←3.</li>
+          <li>لاحظ عدّاد الرندر: ثلاثة <code>setCount</code> = <b>رندر واحد</b>. React يجمع التحديثات <span class="en">(batching)</span>.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="❌ القيمة مباشرة" data-kind="bug">
+function App() {
+  const [count, setCount] = useState(0);
+
+  function addThree() {
+    setCount(count + 1); // ❌ count قيمة قديمة
+    setCount(count + 1);
+    setCount(count + 1);
+  }
+
+  return (
+    <RenderBox name="App">
+      <p className="big">{count}</p>
+      <button onClick={addThree}>أضف 3</button>
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ دالة تحديث" data-kind="fix">
+function App() {
+  const [count, setCount] = useState(0);
+
+  function addThree() {
+    setCount((c) => c + 1); // ✅ دالة تحديث
+    setCount((c) => c + 1);
+    setCount((c) => c + 1);
+  }
+
+  return (
+    <RenderBox name="App">
+      <p className="big">{count}</p>
+      <button onClick={addThree}>أضف 3</button>
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="طابور التحديثات" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">ماذا يرى React؟</p><h2>الطابور الذي يبنيه React من الأسطر الثلاثة</h2><p class="lead">نبدأ و <code>count = 0</code>.</p></div>
+    <div class="vs">
+      <div class="card bad">
+        <h3><code>setCount(count + 1)</code> ثلاث مرات</h3>
+        <div class="table-wrap"><table class="qtable">
+          <thead><tr><th>السطر</th><th>ما يدخل الطابور</th></tr></thead>
+          <tbody>
+            <tr><td>الأول</td><td>«اجعلها 1»</td></tr>
+            <tr><td>الثاني</td><td>«اجعلها 1»</td></tr>
+            <tr><td>الثالث</td><td>«اجعلها 1»</td></tr>
+          </tbody>
+          <tfoot><tr><td>النتيجة</td><td>1</td></tr></tfoot>
+        </table></div>
+      </div>
+      <div class="vs-mid">مقابل</div>
+      <div class="card good step">
+        <h3><code>setCount(c => c + 1)</code> ثلاث مرات</h3>
+        <div class="table-wrap"><table class="qtable">
+          <thead><tr><th>السطر</th><th>ما يدخل الطابور</th></tr></thead>
+          <tbody>
+            <tr><td>الأول</td><td>«زد 1» ← 0 تصبح 1</td></tr>
+            <tr><td>الثاني</td><td>«زد 1» ← 1 تصبح 2</td></tr>
+            <tr><td>الثالث</td><td>«زد 1» ← 2 تصبح 3</td></tr>
+          </tbody>
+          <tfoot><tr><td>النتيجة</td><td>3</td></tr></tfoot>
+        </table></div>
+      </div>
+    </div>
+    <p class="rule step">القاعدة: إذا كانت القيمة الجديدة <b>تعتمد على القديمة</b>، استخدم دالة التحديث <code>setX(prev => …)</code>.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="لا تعدّل الـ state مباشرة" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب</p><h2>المصفوفات والـ objects: انسخ، لا تعدّل <span class="en">(immutability)</span></h2></div>
+    <div class="runner roomy">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>في <b>❌ push</b> اضغط «أضف خبز»: الكونسول يُظهر أن عدد العناصر يزيد، لكن الشاشة لا تتغير.</li>
+          <li><code>push</code> يعدّل <b>نفس</b> المصفوفة. React يقارن بالمرجع: نفس المرجع = «لم يتغير شيء» = لا رندر.</li>
+          <li>الآن اضغط «رندر لسبب آخر»: يظهر الخبز فجأة! هذا النوع من الأخطاء صعب جدًا في المشاريع الحقيقية.</li>
+          <li>في <b>✅ spread</b> ننشئ مصفوفة <b>جديدة</b>، فيرى React مرجعًا جديدًا ويعيد الرندر.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="❌ push" data-kind="bug">
+function App() {
+  const [items, setItems] = useState(['حليب']);
+  const [tick, setTick] = useState(0);
+
+  function add() {
+    items.push('خبز'); // ❌ نعدّل نفس المصفوفة
+    setItems(items);   // نفس المرجع: لا رندر
+    console.log('عدد العناصر:', items.length);
+  }
+
+  return (
+    <RenderBox name="App">
+      <ul>{items.map((it, i) => <li key={i}>{it}</li>)}</ul>
+      <button onClick={add}>أضف خبز</button>
+      <button onClick={() => setTick(tick + 1)}>
+        رندر لسبب آخر
+      </button>
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ spread" data-kind="fix">
+function App() {
+  const [items, setItems] = useState(['حليب']);
+  const [tick, setTick] = useState(0);
+
+  function add() {
+    const next = [...items, 'خبز']; // ✅ مصفوفة جديدة
+    setItems(next);
+    console.log('عدد العناصر:', next.length);
+  }
+
+  return (
+    <RenderBox name="App">
+      <ul>{items.map((it, i) => <li key={i}>{it}</li>)}</ul>
+      <button onClick={add}>أضف خبز</button>
+      <button onClick={() => setTick(tick + 1)}>
+        رندر لسبب آخر
+      </button>
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="أنماط التحديث بدون تعديل" data-part="1">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">ورقة مرجعية</p><h2>كيف أحدّث مصفوفة أو object بدون تعديله؟</h2></div>
+    <div class="cols">
+      <div class="diagram">
+        <h3>مصفوفات</h3>
+<script type="text/x-code">
+// إضافة
+setItems([...items, newItem]);
+
+// حذف
+setItems(items.filter((i) => i.id !== id));
+
+// تعديل عنصر واحد
+setItems(items.map((i) =>
+  i.id === id ? { ...i, done: true } : i
+));
+
+// ترتيب: انسخ أولًا
+setItems([...items].sort(byName));
+
+items.push(x);    // ❌ تعديل مباشر
+items[0] = x;     // ❌ تعديل مباشر
+</script>
+      </div>
+      <div class="diagram">
+        <h3>Objects</h3>
+<script type="text/x-code">
+const [user, setUser] = useState({
+  name: 'سارة',
+  address: { city: 'دبي' },
+});
+
+user.name = 'عمر';                  // ❌
+setUser({ ...user, name: 'عمر' }); // ✅
+
+// object متداخل: انسخ كل مستوى تغيّره
+setUser({
+  ...user,
+  address: { ...user.address, city: 'عمّان' },
+}); // ✅
+</script>
+      </div>
+    </div>
+    <p class="rule step">React يسأل سؤالًا واحدًا: <b>هل المرجع جديد؟</b> <code>Object.is(old, next)</code>. لذلك دائمًا أعطه نسخة جديدة.</p>
+  </div>
+</section>
+
+<!-- ======================================================================
+     الجزء ٢ · مشاركة الـ State
+     ====================================================================== -->
+<section class="slide divider" id="part-2" data-title="الجزء ٢: مشاركة الـ State" data-part="2">
+  <div class="wrap">
+    <div class="part-num">٢</div>
+    <h1>مشاركة الـ State</h1>
+    <p class="lead">ماذا نفعل عندما يحتاج كومبوننتان أخوان نفس القيمة؟</p>
+  </div>
+</section>
+
+<section class="slide" data-title="رفع الـ state للأب" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">مخطط</p><h2>ارفع الـ state إلى <b>أقرب أب مشترك</b> <span class="en">(lifting state up)</span></h2></div>
+    <div class="cols">
+      <div class="stack" style="display:flex;flex-direction:column;gap:.7rem">
+        <div class="tree-stage wide-tree" data-tree>
+          <div class="tree-row">
+            <div class="tnode state" data-id="app"><b>App</b><small>هنا يعيش <code>query</code></small></div>
+          </div>
+          <div class="tree-row">
+            <div class="tnode" data-id="search" data-parent="app" data-label="⬇ query ⬆ onChange" data-label-class="down"><b>SearchBox</b><small>يكتب فيه المستخدم</small></div>
+            <div class="tnode" data-id="results" data-parent="app" data-label="⬇ query" data-label-class="down"><b>Results</b><small>يعرض النتائج</small></div>
+          </div>
+        </div>
+        <div class="legend"><span>⬇ البيانات تنزل كـ <b>props</b></span><span>⬆ الأحداث تصعد عبر <b>دوال</b> <span class="en">(callbacks)</span></span></div>
+      </div>
+      <div class="stack" style="display:flex;flex-direction:column;gap:.7rem">
+        <ol class="checklist">
+          <li class="step"><span>احذف الـ state من الأبناء.</span></li>
+          <li class="step"><span>ضعه في أقرب أب يجمعهم، وهنا هو <code>App</code>.</span></li>
+          <li class="step"><span>مرّر القيمة للأسفل كـ prop: <code>query={query}</code></span></li>
+          <li class="step"><span>مرّر دالة التغيير: <code>onChange={setQuery}</code></span></li>
+        </ol>
+        <p class="rule step">مصدر واحد للحقيقة: القيمة موجودة في مكان واحد فقط.<small>بالإنجليزية: single source of truth</small></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="مثال: رفع الـ state" data-part="2">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب</p><h2>صندوق بحث وقائمة نتائج</h2></div>
+    <div class="runner roomy">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>في <b>❌</b> اكتب «م» في صندوق البحث: القائمة لا تتغير. كل أخ عنده نسخته الخاصة، و<code>Results</code> لا يعرف ماذا كُتب.</li>
+          <li>الأخوة <b>لا يتكلمون مباشرة</b>. البيانات في React تنزل من الأب إلى الابن فقط.</li>
+          <li>في <b>✅</b> نقلنا <code>query</code> إلى <code>App</code>. الآن الاثنان يقرآن نفس القيمة.</li>
+          <li class="muted">ثمن هذا الحل: كل تغيير في <code>App</code> يعيد رندر كل أبنائه. انظر <a href="props.html">عرض الـ Props وإعادة الرندر</a>.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="❌ كل أخ له state" data-kind="bug">
+const FRUITS = ['تفاح', 'موز', 'مانجو', 'مشمش', 'تين'];
+
+function SearchBox() {
+  const [query, setQuery] = useState('');
+  return <input value={query} placeholder="ابحث…"
+    onChange={(e) => setQuery(e.target.value)} />;
+}
+
+function Results() {
+  const query = ''; // ❌ لا يعرف ماذا كُتب
+  const list = FRUITS.filter((f) => f.includes(query));
+  return <ul>{list.map((f) => <li key={f}>{f}</li>)}</ul>;
+}
+
+function App() {
+  return (
+    <div className="stack">
+      <SearchBox />
+      <Results />
+    </div>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ الـ state في الأب" data-kind="fix">
+const FRUITS = ['تفاح', 'موز', 'مانجو', 'مشمش', 'تين'];
+
+function SearchBox({ query, onChange }) {
+  return <input value={query} placeholder="ابحث…"
+    onChange={(e) => onChange(e.target.value)} />;
+}
+
+function Results({ query }) {
+  const list = FRUITS.filter((f) => f.includes(query));
+  return <ul>{list.map((f) => <li key={f}>{f}</li>)}</ul>;
+}
+
+function App() {
+  const [query, setQuery] = useState(''); // ✅ في الأب
+  return (
+    <div className="stack">
+      <SearchBox query={query} onChange={setQuery} />
+      <Results query={query} />
+    </div>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     الجزء ٣ · Context
+     ====================================================================== -->
+<section class="slide divider" id="part-3" data-title="الجزء ٣: Context" data-part="3">
+  <div class="wrap">
+    <div class="part-num">٣</div>
+    <h1>Context</h1>
+    <p class="lead">عندما يكون الأب المشترك بعيدًا جدًا، ونتعب من تمرير الـ props طابقًا طابقًا.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="مشكلة الـ prop drilling" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">المشكلة</p><h2>الـ prop drilling: كومبوننتات تمرّر قيمة لا تستخدمها</h2></div>
+    <div class="cols">
+      <div class="diagram">
+        <h3>❌ بدون Context: كل طابق يمرّر <code>user</code></h3>
+        <div class="tree-stage" data-tree>
+          <div class="tree-row"><div class="tnode state" data-id="a"><b>App</b><small><code>user</code> هنا</small></div></div>
+          <div class="tree-row"><div class="tnode pass" data-id="b" data-parent="a" data-edge="drill"><b>Layout</b></div></div>
+          <div class="tree-row"><div class="tnode pass" data-id="c" data-parent="b" data-edge="drill"><b>Sidebar</b></div></div>
+          <div class="tree-row"><div class="tnode got" data-id="d" data-parent="c" data-edge="drill"><b>UserMenu</b><small>يستخدم <code>user</code></small></div></div>
+        </div>
+      </div>
+      <div class="diagram step">
+        <h3>✅ مع Context: المستهلك يقرأ القيمة مباشرة</h3>
+        <div class="tree-stage" data-tree>
+          <div class="tree-row"><div class="tnode ctx-node" data-id="a"><b>UserProvider</b><small>يوفّر <code>user</code></small></div></div>
+          <div class="tree-row"><div class="tnode" data-id="b" data-parent="a"><b>Layout</b></div></div>
+          <div class="tree-row"><div class="tnode" data-id="c" data-parent="b"><b>Sidebar</b></div></div>
+          <div class="tree-row"><div class="tnode got" data-id="d" data-parent="c" data-link="a" data-link-label="useContext"><b>UserMenu</b><small><code>useContext(UserContext)</code></small></div></div>
+        </div>
+      </div>
+    </div>
+    <p class="small-note step">Context ليس «مكانًا لحفظ الـ state». هو <b>طريقة لتوصيل</b> قيمة لأسفل الشجرة. الـ state نفسه ما زال <code>useState</code> داخل الـ Provider.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="createContext / Provider / useContext" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الكود</p><h2>ثلاث خطوات: أنشئ، وفّر، اقرأ</h2></div>
+    <div class="cols cols-60">
+<script type="text/x-code">
+import { createContext, useContext, useState } from 'react';
+
+// الخطوة ١: أنشئ الـ Context خارج أي كومبوننت
+const ThemeContext = createContext('light');
+
+// الخطوة ٢: وفّر القيمة في الأعلى
+function App() {
+  const [theme, setTheme] = useState('light');
+  return (
+    <ThemeContext.Provider value={theme}>
+      <Layout />
+    </ThemeContext.Provider>
+  );
+}
+
+// الخطوة ٣: اقرأها في أي مكان تحت الـ Provider
+function Avatar() {
+  const theme = useContext(ThemeContext);
+  return <img className={theme} />;
+}
+</script>
+      <div style="display:flex;flex-direction:column;gap:.7rem">
+        <div class="card step"><h3>القيمة الافتراضية</h3><p>القيمة التي نمرّرها لـ <code>createContext</code> تُستخدم فقط إذا لم يوجد Provider فوق الكومبوننت.</p></div>
+        <div class="card step"><h3>نمط شائع: hook خاص</h3>
+<script type="text/x-code">
+export function useTheme() {
+  const ctx = useContext(ThemeContext);
+  if (!ctx) throw new Error('خارج الـ Provider');
+  return ctx;
+}
+</script>
+        </div>
+        <p class="small-note step">في React 19 يمكنك كتابة <code>&lt;ThemeContext value={theme}&gt;</code> مباشرة، بدون كتابة <code>Provider</code>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="مثال: Theme Context" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب</p><h2>Context يعبر من فوق الكومبوننتات التي لا تحتاجه</h2></div>
+    <div class="runner roomy">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>اضغط «بدّل الثيم» وراقب عدّادات الرندر.</li>
+          <li><code>App</code> يعيد الرندر لأنه صاحب الـ state.</li>
+          <li><code>Layout</code> ملفوف بـ <code>memo</code> فلا يعيد الرندر، وكذلك <code>Sidebar</code> تحته.</li>
+          <li><code>ThemedCard</code> يعيد الرندر رغم أن أباه لم يفعل: لأنه <b>يستهلك</b> الـ Context بـ <code>useContext</code>.</li>
+          <li class="muted"><code>memo</code> هنا فقط لنعزل أثر الـ Context. تفاصيله في <a href="props.html">عرض الـ Props</a>.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="Theme Context" data-kind="fix">
+const ThemeContext = createContext('light');
+
+function App() {
+  const [theme, setTheme] = useState('light');
+  const toggle = () =>
+    setTheme((t) => (t === 'light' ? 'dark' : 'light'));
+  return (
+    <ThemeContext.Provider value={theme}>
+      <RenderBox name="App">
+        <button onClick={toggle}>بدّل الثيم</button>
+        <Layout />
+      </RenderBox>
+    </ThemeContext.Provider>
+  );
+}
+
+// memo: لا يعيد الرندر إلا إذا تغيّرت الـ props
+const Layout = memo(function Layout() {
+  return (
+    <RenderBox name="Layout (memo)">
+      <Sidebar />
+      <ThemedCard />
+    </RenderBox>
+  );
+});
+
+function Sidebar() {
+  return (
+    <RenderBox name="Sidebar">لا يقرأ الثيم</RenderBox>
+  );
+}
+
+function ThemedCard() {
+  const theme = useContext(ThemeContext); // مستهلك
+  return (
+    <RenderBox name="ThemedCard">
+      <div className={theme}>الثيم الحالي: {theme}</div>
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="متى يعيد مستهلكو الـ Context الرندر؟" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">مخطط</p><h2>قيمة الـ Provider تتغير ← كل المستهلكين يعيدون الرندر</h2></div>
+    <div class="cols cols-60">
+      <div class="diagram">
+        <div class="flow compact">
+          <div class="fn start">الـ Provider يعيد الرندر</div>
+          <div class="fa"></div>
+          <div class="fn decision step">هل <code>value</code> جديدة؟ <small><code>Object.is(oldValue, newValue)</code></small></div>
+          <div class="fbranch step">
+            <div class="flow"><div class="fa yes"><span>نعم</span></div><div class="fn react">React يبحث عن كل من يستدعي <code>useContext</code></div><div class="fa"></div><div class="fn bad">كل مستهلك يعيد الرندر <small>حتى داخل <code>memo</code></small></div></div>
+            <div class="flow"><div class="fa no"><span>لا</span></div><div class="fn end">المستهلكون لا يتأثرون</div></div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.7rem">
+        <div class="card bad step"><h3>لا يوجد selector</h3><p>إذا كانت <code>value = { user, theme }</code> وكومبوننت يقرأ <code>theme</code> فقط، فهو يعيد الرندر عندما يتغير <code>user</code> أيضًا.</p></div>
+        <div class="card step"><h3>الحل المعتاد</h3><p>قسّم الـ Context: واحد لكل قيمة مستقلة، مثل <code>ThemeContext</code> و<code>UserContext</code>. أو استخدم Zustand.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="فخ: object جديد في value" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">فخ شائع</p><h2><code>value={{ … }}</code> تنشئ object جديد في كل رندر</h2></div>
+    <div class="runner roomy">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>في <b>❌</b> اضغط «عدّاد لا علاقة له»: <code>UserBadge</code> يعيد الرندر في كل ضغطة، مع أن <code>user</code> لم يتغير.</li>
+          <li>السبب: <code>{ user, logout }</code> object <b>جديد</b> في كل رندر لـ <code>App</code>، فـ <code>Object.is</code> يقول «تغيّر».</li>
+          <li>في <b>✅</b> نثبّت الـ object بـ <code>useMemo</code> والدالة بـ <code>useCallback</code>. الآن يعيد الرندر فقط عند تغيّر <code>user</code> (جرّب «خروج»).</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="❌ object جديد كل مرة" data-kind="bug">
+const AuthContext = createContext(null);
+
+function App() {
+  const [user, setUser] = useState('سارة');
+  const [clicks, setClicks] = useState(0);
+  const logout = () => setUser(null);
+  const value = { user, logout }; // ❌ جديد في كل رندر
+
+  return (
+    <AuthContext.Provider value={value}>
+      <RenderBox name="App">
+        <button onClick={() => setClicks(clicks + 1)}>
+          عدّاد لا علاقة له: {clicks}
+        </button>
+        <Page />
+      </RenderBox>
+    </AuthContext.Provider>
+  );
+}
+
+const Page = memo(function Page() {
+  return (
+    <RenderBox name="Page (memo)"><UserBadge /></RenderBox>
+  );
+});
+
+function UserBadge() {
+  const { user, logout } = useContext(AuthContext);
+  return (
+    <RenderBox name="UserBadge">
+      👤 {user ?? 'زائر'}
+      <button onClick={logout}>خروج</button>
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="✅ useMemo" data-kind="fix">
+const AuthContext = createContext(null);
+
+function App() {
+  const [user, setUser] = useState('سارة');
+  const [clicks, setClicks] = useState(0);
+  const logout = useCallback(() => setUser(null), []);
+  const value = useMemo( // ✅ نفس الـ object
+    () => ({ user, logout }),
+    [user, logout],
+  );
+
+  return (
+    <AuthContext.Provider value={value}>
+      <RenderBox name="App">
+        <button onClick={() => setClicks(clicks + 1)}>
+          عدّاد لا علاقة له: {clicks}
+        </button>
+        <Page />
+      </RenderBox>
+    </AuthContext.Provider>
+  );
+}
+
+const Page = memo(function Page() {
+  return (
+    <RenderBox name="Page (memo)"><UserBadge /></RenderBox>
+  );
+});
+
+function UserBadge() {
+  const { user, logout } = useContext(AuthContext);
+  return (
+    <RenderBox name="UserBadge">
+      👤 {user ?? 'زائر'}
+      <button onClick={logout}>خروج</button>
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="متى يناسبنا Context؟" data-part="3">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">متى؟</p><h2>Context ممتاز لقيم <b>عامة</b> و<b>نادرًا</b> ما تتغير</h2></div>
+    <div class="vs">
+      <div class="card good">
+        <h3><span class="tag good">مناسب</span></h3>
+        <ul class="points">
+          <li>🎨 الثيم (فاتح / داكن)</li>
+          <li>🌐 اللغة واتجاه الصفحة</li>
+          <li>👤 المستخدم الحالي بعد الدخول</li>
+          <li>🧩 أدوات ثابتة: عميل API، إعدادات</li>
+        </ul>
+      </div>
+      <div class="vs-mid">مقابل</div>
+      <div class="card bad step">
+        <h3><span class="tag bad">غير مناسب</span></h3>
+        <ul class="points">
+          <li>⌨️ قيم تتغير مع كل ضغطة زر في فورم كبير</li>
+          <li>🛒 سلة تسوّق تقرأها وتعدّلها صفحات كثيرة</li>
+          <li>⏱️ قيم تتغير عدة مرات في الثانية</li>
+          <li>📡 بيانات من السيرفر: مكانها React Query</li>
+        </ul>
+      </div>
+    </div>
+    <p class="rule step">Context = <b>توصيل</b> قيمة. إذا احتجت selectors، أو actions كثيرة، أو تحديثات متكررة: انتقل إلى Zustand.</p>
+  </div>
+</section>
+
+<!-- ======================================================================
+     الجزء ٤ · Zustand
+     ====================================================================== -->
+<section class="slide divider" id="part-4" data-title="الجزء ٤: Zustand" data-part="4">
+  <div class="wrap">
+    <div class="part-num">٤</div>
+    <h1>Zustand 🐻</h1>
+    <p class="lead">store صغير يعيش خارج React، والكومبوننتات تشترك فقط في القطعة التي تحتاجها.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="ما هو Zustand؟" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الفكرة</p><h2>store خارج شجرة React، والكومبوننتات تشترك فيه</h2></div>
+    <div class="cols cols-60">
+      <div class="diagram">
+        <div class="tree-stage wide-tree three" data-tree>
+          <div class="tree-row"><div class="tnode store-node" data-id="s"><b>🐻 useCartStore</b><small>يعيش خارج React</small></div></div>
+          <div class="tree-row">
+            <div class="tnode" data-id="b" data-parent="s" data-edge="sub" data-label="s => s.items.length" data-label-class="sub"><b>CartBadge</b></div>
+            <div class="tnode" data-id="p" data-parent="s" data-edge="sub" data-label="s => s.add" data-label-class="sub"><b>Products</b></div>
+            <div class="tnode" data-id="t" data-parent="s" data-edge="sub" data-label="s => s.items" data-label-class="sub"><b>Total</b></div>
+          </div>
+        </div>
+        <p class="legend">الخط المتقطع = اشتراك عبر selector، وليس props</p>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.7rem">
+        <ul class="points">
+          <li class="step">لا يحتاج <b>Provider</b>. أي كومبوننت يستدعي الـ hook مباشرة.</li>
+          <li class="step">كل كومبوننت يختار قطعته بـ <b>selector</b>، ويعيد الرندر فقط عندما تتغير هذه القطعة.</li>
+          <li class="step">الـ store كائن JavaScript عادي: تقرأه وتعدّله حتى <b>خارج React</b>.</li>
+          <li class="step">صغير جدًا (حوالي 1KB) وبدون كود إضافي كثير.</li>
+        </ul>
+        <div class="rule step">في مشروعك الحقيقي تثبّت المكتبة وتستورد منها:
+<script type="text/x-code">
+npm i zustand
+import { create } from 'zustand';
+</script>
+          <small>في هذا العرض، <code>create</code> نسخة من Zustand في حوالي 20 سطرًا، مبنية على <code>useSyncExternalStore</code> مثل الأصلية، وتعمل بنفس الطريقة تمامًا.</small></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="create: الـ state والـ actions" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الكود</p><h2>الدالة <code>create</code> تجمع الـ state والـ actions في مكان واحد</h2></div>
+    <div class="cols">
+      <div class="diagram">
+        <h3>store/cartStore.js</h3>
+<script type="text/x-code">
+import { create } from 'zustand';
+
+export const useCartStore = create((set, get) => ({
+  // الـ state
+  items: [],
+
+  // الـ actions: دوال تغيّر الـ state
+  add: (item) =>
+    set((s) => ({ items: [...s.items, item] })),
+  remove: (id) =>
+    set((s) => ({
+      items: s.items.filter((i) => i.id !== id),
+    })),
+  clear: () => set({ items: [] }),
+
+  // get: اقرأ الـ state الحالية داخل الـ store
+  count: () => get().items.length,
+}));
+</script>
+      </div>
+      <div class="diagram">
+        <h3>داخل الكومبوننت</h3>
+<script type="text/x-code">
+function CartBadge() {
+  // selector: اشترك في قطعة واحدة فقط
+  const n = useCartStore((s) => s.items.length);
+  return <span>🛒 {n}</span>;
+}
+
+function AddButton({ product }) {
+  const add = useCartStore((s) => s.add);
+  return (
+    <button onClick={() => add(product)}>أضف</button>
+  );
+}
+</script>
+        <ul class="points tight">
+          <li class="step"><code>set</code> يدمج ما ترجعه مع الـ state <b>(دمج سطحي)</b>، فلا تحتاج نسخ باقي المفاتيح.</li>
+          <li class="step">قواعد الـ immutability نفسها: <code>[...s.items, item]</code> وليس <code>push</code>.</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="مثال: سلة مع Zustand" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">جرّب</p><h2>سلة تسوّق: مع selector وبدونه</h2></div>
+    <div class="runner roomy">
+      <div class="r-notes">
+        <ul class="points tight">
+          <li>في <b>✅</b> أضف منتجات: فقط <code>CartBadge</code> يعيد الرندر. <code>Products</code> و<code>App</code> يبقيان على 1.</li>
+          <li><code>Products</code> يختار <code>s.add</code>، وهي دالة لا تتغير أبدًا، فلا سبب لإعادة الرندر.</li>
+          <li>«أفرغ السلة» وهي فارغة: <code>CartBadge</code> لا يعيد الرندر، لأن الناتج 0 مثل السابق.</li>
+          <li>في <b>❌</b> كل كومبوننت يأخذ <b>الـ store كله</b>: أي تغيير يعيد رندر الجميع.</li>
+          <li>زر «اطبع الـ store» يستخدم <code>getState()</code>: يقرأ بدون اشتراك، فلا يسبب رندر.</li>
+        </ul>
+      </div>
+<script type="text/x-snippet" data-label="✅ مع selectors" data-kind="fix">
+const useCart = create((set) => ({
+  items: [],
+  add: (name) =>
+    set((s) => ({ items: [...s.items, name] })),
+  clear: () => set({ items: [] }),
+}));
+
+function CartBadge() {
+  const count = useCart((s) => s.items.length); // ✅
+  return <RenderBox name="CartBadge">🛒 {count}</RenderBox>;
+}
+
+function Products() {
+  const add = useCart((s) => s.add); // ✅ دالة ثابتة
+  return (
+    <RenderBox name="Products">
+      <button onClick={() => add('قهوة')}>أضف قهوة</button>
+      <button onClick={() => add('شاي')}>أضف شاي</button>
+    </RenderBox>
+  );
+}
+
+function Tools() {
+  const clear = useCart((s) => s.clear);
+  const log = () => console.log(useCart.getState().items);
+  return (
+    <RenderBox name="Tools">
+      <button onClick={clear}>أفرغ السلة</button>
+      <button onClick={log}>اطبع الـ store</button>
+    </RenderBox>
+  );
+}
+
+function App() {
+  return (
+    <RenderBox name="App">
+      <CartBadge /><Products /><Tools />
+    </RenderBox>
+  );
+}
+</script>
+<script type="text/x-snippet" data-label="❌ الـ store كله" data-kind="bug">
+const useCart = create((set) => ({
+  items: [],
+  add: (name) =>
+    set((s) => ({ items: [...s.items, name] })),
+  clear: () => set({ items: [] }),
+}));
+
+function CartBadge() {
+  const { items } = useCart(); // ❌ بدون selector
+  return (
+    <RenderBox name="CartBadge">🛒 {items.length}</RenderBox>
+  );
+}
+
+function Products() {
+  const { add } = useCart(); // ❌ بدون selector
+  return (
+    <RenderBox name="Products">
+      <button onClick={() => add('قهوة')}>أضف قهوة</button>
+      <button onClick={() => add('شاي')}>أضف شاي</button>
+    </RenderBox>
+  );
+}
+
+function Tools() {
+  const { clear } = useCart(); // ❌ بدون selector
+  const log = () => console.log(useCart.getState().items);
+  return (
+    <RenderBox name="Tools">
+      <button onClick={clear}>أفرغ السلة</button>
+      <button onClick={log}>اطبع الـ store</button>
+    </RenderBox>
+  );
+}
+
+function App() {
+  return (
+    <RenderBox name="App">
+      <CartBadge /><Products /><Tools />
+    </RenderBox>
+  );
+}
+</script>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="كيف يعمل Zustand من الداخل؟" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">مخطط</p><h2>من <code>set()</code> إلى إعادة الرندر</h2></div>
+    <div class="cols">
+      <div class="diagram">
+        <div class="flow compact">
+          <div class="fn start">كومبوننت يستدعي action مثل add</div>
+          <div class="fa"><code>set()</code></div>
+          <div class="fn store step">الـ store ينشئ state جديدة</div>
+          <div class="fa step"></div>
+          <div class="fn react step">يُبلغ كل المشتركين <small>listeners</small></div>
+          <div class="fa step"></div>
+          <div class="fn decision step">كل مشترك يشغّل الـ selector: هل تغيّر الناتج؟ <small><code>Object.is</code></small></div>
+          <div class="fbranch step">
+            <div class="flow"><div class="fa yes"><span>نعم</span></div><div class="fn ok" style="white-space:nowrap">يعيد الرندر</div></div>
+            <div class="flow"><div class="fa no"><span>لا</span></div><div class="fn muted-node" style="white-space:nowrap">لا رندر</div></div>
+          </div>
+        </div>
+      </div>
+      <div class="diagram">
+        <h3>قلب Zustand (مبسّط)</h3>
+<script type="text/x-code">
+function create(init) {
+  let state; // يعيش خارج React
+  const listeners = new Set();
+
+  const set = (partial) => {
+    const next = typeof partial === 'function'
+      ? partial(state) : partial;
+    state = { ...state, ...next };
+    listeners.forEach((l) => l()); // أبلغ الجميع
+  };
+  const get = () => state;
+  const subscribe = (l) => {
+    listeners.add(l);
+    return () => listeners.delete(l);
+  };
+
+  state = init(set, get);
+  return (selector) => useSyncExternalStore(
+    subscribe, () => selector(state));
+}
+</script>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="selector يرجع object" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">فخ شائع</p><h2>selector يرجع object جديد في كل مرة</h2></div>
+    <div class="cols cols-60">
+<script type="text/x-code">
+// ❌ object جديد في كل استدعاء: حلقة رندر لا نهائية
+const { items, add } = useCartStore((s) => ({
+  items: s.items,
+  add: s.add,
+}));
+
+// ✅ الحل الأبسط: selector لكل قيمة
+const items = useCartStore((s) => s.items);
+const add = useCartStore((s) => s.add);
+
+// ✅ أو useShallow: يقارن المفاتيح واحدًا واحدًا
+import { useShallow } from 'zustand/react/shallow';
+const { items, add } = useCartStore(
+  useShallow((s) => ({ items: s.items, add: s.add })),
+);
+</script>
+      <div style="display:flex;flex-direction:column;gap:.7rem">
+        <div class="card bad step"><h3>لماذا يحدث؟</h3><p>Zustand يقارن ناتج الـ selector بـ <code>Object.is</code>. object جديد = «تغيّر» دائمًا = رندر، ثم object جديد مرة أخرى…</p></div>
+        <div class="card good step"><h3>القاعدة</h3><p>اجعل الـ selector يرجع <b>قيمة موجودة في الـ store</b> أو قيمة بسيطة (رقم، نص، boolean).</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="getState() خارج React" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">ميزة مهمة</p><h2>اقرأ الـ store من ملف ليس كومبوننت باستخدام <code>getState()</code></h2></div>
+    <div class="cols cols-60">
+      <div class="diagram">
+        <h3>api/client.js: axios interceptor</h3>
+<script type="text/x-code">
+import axios from 'axios';
+import { useAuthStore } from '../store/authStore';
+
+export const api = axios.create({ baseURL: '/api' });
+
+// قبل كل طلب: أضف التوكن إن وُجد
+api.interceptors.request.use((config) => {
+  const token = useAuthStore.getState().accessToken;
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// ويمكنك أيضًا التعديل من الخارج
+useAuthStore.getState().clearSession();
+useAuthStore.setState({ status: 'guest' });
+</script>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.7rem">
+        <div class="card good step"><h3>لماذا هذا مهم؟</h3><p>الـ hooks تعمل فقط داخل كومبوننت. لكن الـ interceptor دالة عادية. <code>getState()</code> تعطيك <b>آخر قيمة</b> في أي مكان.</p></div>
+        <div class="card bad step"><h3>انتبه</h3><p><code>getState()</code> لا يشترك. لو استخدمته لعرض قيمة على الشاشة، لن تتحدث الشاشة. داخل الكومبوننت استخدم الـ hook مع selector.</p></div>
+        <p class="small-note step">مع Context هذا غير ممكن: قيمته موجودة داخل شجرة React فقط. تفاصيل التوكن في <a href="auth.html">عرض الـ Auth</a>.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="persist و partialize" data-part="4">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">من المشروع الحقيقي</p><h2>احفظ جزءًا من الـ store في localStorage باستخدام <code>persist</code></h2></div>
+    <div class="cols cols-60">
+      <div class="diagram">
+        <h3>src/store/authStore.js (مختصر)</h3>
+<script type="text/x-code">
+import { create } from 'zustand';
+import { persist } from 'zustand/middleware';
+
+export const useAuthStore = create(
+  persist(
+    (set) => ({
+      status: 'checking',
+      accessToken: null,
+      lastEmail: '',
+      setSession: ({ accessToken }) =>
+        set({ status: 'authenticated', accessToken }),
+      clearSession: () =>
+        set({ status: 'guest', accessToken: null }),
+    }),
+    {
+      name: 'auth-prefs', // المفتاح في localStorage
+      // ✅ احفظ lastEmail فقط، وليس التوكن
+      partialize: (s) => ({ lastEmail: s.lastEmail }),
+    },
+  ),
+);
+
+// selectors جاهزة للكومبوننتات
+export const useAuthStatus = () =>
+  useAuthStore((s) => s.status);
+</script>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:.7rem">
+        <div class="card step"><h3><code>persist</code></h3><p>يغلّف الـ store: بعد كل <code>set</code> يحفظ في localStorage، وعند تحميل الصفحة يسترجع القيم.</p></div>
+        <div class="card step"><h3><code>partialize</code></h3><p>يحدد <b>أي المفاتيح</b> تُحفظ. بدونه يُحفظ كل شيء.</p></div>
+        <div class="card bad step"><h3>لماذا ليس التوكن؟</h3><p>أي سكربت خبيث <span class="en">(XSS)</span> يستطيع قراءة localStorage. التوكن يبقى في الذاكرة فقط.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     الجزء ٥ · أين أضع الـ State؟
+     ====================================================================== -->
+<section class="slide divider" id="part-5" data-title="الجزء ٥: أين أضع الـ State؟" data-part="5">
+  <div class="wrap">
+    <div class="part-num">٥</div>
+    <h1>أين أضع الـ State؟</h1>
+    <p class="lead">لا توجد أداة «أفضل». يوجد مكان مناسب لكل قيمة.</p>
+  </div>
+</section>
+
+<section class="slide" data-title="جدول المقارنة" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">مقارنة</p><h2>useState مقابل Context مقابل Zustand</h2></div>
+    <div class="table-wrap">
+      <table class="cmp">
+        <thead>
+          <tr><th></th><th class="c-state"><code>useState</code></th><th class="c-ctx">Context</th><th class="c-zu">Zustand</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>النطاق</td><td>كومبوننت واحد (وأبناؤه عبر props)</td><td>كل ما تحت الـ Provider</td><td>التطبيق كله، وحتى خارج React</td></tr>
+          <tr class="step"><td>الكود الإضافي</td><td>لا شيء</td><td>Context + Provider + hook</td><td>ملف store واحد، بدون Provider</td></tr>
+          <tr class="step"><td>إعادة الرندر</td><td>الكومبوننت وأبناؤه</td><td>كل المستهلكين عند تغيّر <code>value</code></td><td>فقط من تغيّر ناتج الـ selector عنده</td></tr>
+          <tr class="step"><td>selectors</td><td>غير مطلوبة</td><td>لا يوجد</td><td>نعم ✅</td></tr>
+          <tr class="step"><td>خارج React</td><td>لا</td><td>لا</td><td><code>getState()</code> / <code>setState()</code></td></tr>
+          <tr class="step"><td>DevTools</td><td>React DevTools</td><td>React DevTools</td><td>Redux DevTools عبر <code>devtools</code></td></tr>
+          <tr class="step"><td>الحفظ</td><td>يدويًا</td><td>يدويًا</td><td><code>persist</code> جاهز</td></tr>
+          <tr class="step"><td>متى؟</td><td>الحالة المحلية: input، modal، tab</td><td>قيم عامة ثابتة تقريبًا: ثيم، لغة</td><td>حالة عامة تتغير كثيرًا: سلة، auth</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-title="مخطط القرار" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">مخطط قرار</p><h2>اسأل هذه الأسئلة بالترتيب</h2></div>
+    <div class="ladder">
+      <div class="lrow"><div class="fn decision">هل هي بيانات تأتي من السيرفر؟</div><div class="harrow"><span>نعم</span></div><div class="fn server">React Query <small>تخزين مؤقت لبيانات السيرفر، وليست state للعميل</small></div></div>
+      <div class="lno step"><div class="fa no"><span>لا</span></div></div>
+      <div class="lrow step"><div class="fn decision">هل يحتاجها كومبوننت واحد فقط؟</div><div class="harrow"><span>نعم</span></div><div class="fn ok"><code>useState</code> داخله</div></div>
+      <div class="lno step"><div class="fa no"><span>لا</span></div></div>
+      <div class="lrow step"><div class="fn decision">هل يحتاجها أخوة قريبون؟</div><div class="harrow"><span>نعم</span></div><div class="fn ok">ارفعها لأقرب أب مشترك</div></div>
+      <div class="lno step"><div class="fa no"><span>لا</span></div></div>
+      <div class="lrow step"><div class="fn decision">قيمة عامة نادرًا ما تتغير؟ <small>ثيم، لغة، المستخدم الحالي</small></div><div class="harrow"><span>نعم</span></div><div class="fn ctx">Context</div></div>
+      <div class="lno step"><div class="fa no"><span>لا</span></div></div>
+      <div class="lrow step"><div class="fn store">عامة وتتغير كثيرًا، أو منطق معقّد ← <b>Zustand</b></div><div></div><div></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ======================================================================
+     الخلاصة
+     ====================================================================== -->
+<section class="slide" data-title="الخلاصة" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">الخلاصة</p><h2>ما يجب أن تتذكره</h2></div>
+    <ol class="checklist">
+      <li class="step"><span>الـ state ذاكرة الكومبوننت. تغييرها بـ <code>setX</code> يطلب رندر جديد. المتغير العادي لا يفعل.</span></li>
+      <li class="step"><span>الـ state لقطة ثابتة داخل كل رندر. إذا اعتمدت القيمة على السابقة: <code>setX(prev => …)</code>.</span></li>
+      <li class="step"><span>لا تعدّل مصفوفة أو object. أنشئ نسخة جديدة بـ <code>...spread</code> و<code>map</code> و<code>filter</code>.</span></li>
+      <li class="step"><span>أخوة يحتاجون نفس القيمة؟ ارفعها لأقرب أب مشترك.</span></li>
+      <li class="step"><span>Context للقيم العامة النادرة التغير. ثبّت <code>value</code> بـ <code>useMemo</code>.</span></li>
+      <li class="step"><span>Zustand للحالة العامة المتغيرة. دائمًا استخدم selector، و<code>getState()</code> خارج React.</span></li>
+    </ol>
+  </div>
+</section>
+
+<section class="slide" data-title="اختبر نفسك" data-part="5">
+  <div class="wrap">
+    <div class="slide-head"><p class="kicker">اختبر نفسك</p><h2>ماذا يحدث؟ أو: أين تضع هذه القيمة؟ <span class="en">(اضغط البطاقة)</span></h2></div>
+    <div class="flips six">
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">بطاقة ١</span><code class="hl">items.push(x);
+setItems(items);</code></span>
+        <span class="face back"><span class="ans bad">لا يتغير شيء</span><span class="exp">نفس المرجع، فـ React يتخطى الرندر. استخدم <code>[...items, x]</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">بطاقة ٢ · count = 5</span><code class="hl">setCount(count + 1);
+setCount(count + 1);</code></span>
+        <span class="face back"><span class="ans bad">count = 6</span><span class="exp">الاثنان يقرآن اللقطة نفسها (5). استخدم <code>c => c + 1</code> لتحصل على 7.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">بطاقة ٣</span><code class="hl">&lt;Ctx.Provider value={{ user, logout }}&gt;</code></span>
+        <span class="face back"><span class="ans bad">رندر زائد</span><span class="exp">object جديد في كل رندر، فكل المستهلكين يعيدون الرندر. ثبّته بـ <code>useMemo</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">بطاقة ٤</span><code class="hl">const { items } = useCart();</code></span>
+        <span class="face back"><span class="ans bad">يعيد الرندر مع أي تغيير</span><span class="exp">بدون selector تشترك في الـ store كله. اكتب <code>useCart(s => s.items)</code>.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">بطاقة ٥ · أين أضعها؟</span><span style="font-size:1.05rem">اللغة المختارة في التطبيق كله</span></span>
+        <span class="face back"><span class="ans good">Context</span><span class="exp">عامة ونادرًا ما تتغير. Zustand يعمل أيضًا، لكن Context يكفي.</span></span>
+      </span></button>
+      <button class="flip"><span class="flip-in">
+        <span class="face front"><span class="q">بطاقة ٦ · أين أضعها؟</span><span style="font-size:1.05rem">قائمة المنتجات القادمة من الـ API</span></span>
+        <span class="face back"><span class="ans good">React Query</span><span class="exp">هذه بيانات السيرفر وليست state للعميل. React Query يهتم بالـ cache والتحميل والأخطاء.</span></span>
+      </span></button>
+    </div>
+  </div>
+</section>
+
+<section class="slide title-slide" data-title="الختام" data-part="0">
+  <div class="wrap">
+    <p class="kicker">انتهينا 🎉</p>
+    <h1>كل قيمة لها <span class="react-word">مكان</span></h1>
+    <p class="lead">ابدأ دائمًا بأبسط حل، وهو <code>useState</code>. وانقل الـ state للأعلى فقط عندما تحتاج.</p>
+    <div class="end-links">
+      <a href="props.html" style="--c: var(--p4)"><b>التالي: الـ Props وإعادة الرندر ←</b><p class="small-note">لماذا تمرير الـ state عبر الـ props يعيد رندر كومبوننتات أكثر.</p></a>
+      <a href="auth.html" style="--c: var(--p3)"><b>الـ Auth flow ←</b><p class="small-note">Zustand في مشروع حقيقي: التوكن، الـ refresh، والصفحات المحمية.</p></a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<div class="progress"><div id="progress-bar"></div></div>
+<div class="pager">
+  <button id="prev" title="السابق (→)" aria-label="السابق">→</button>
+  <button id="next" title="التالي (←)" aria-label="التالي">←</button>
+</div>
+<dialog id="overview">
+  <div class="ov-head"><h2>كل الشرائح</h2><button class="icon-btn ov-close" aria-label="إغلاق">✕</button></div>
+  <div class="ov-grid"></div>
+</dialog>
+
+<script>window.DECK = { id: 'state', parts: { 1: 'الجزء ١ · ما هو الـ State؟', 2: 'الجزء ٢ · مشاركة الـ State', 3: 'الجزء ٣ · Context', 4: 'الجزء ٤ · Zustand', 5: 'الجزء ٥ · أين أضع الـ State؟' } };</script>
+<script src="vendor/react.development.js"></script>
+<script src="vendor/react-dom.development.js"></script>
+<script src="vendor/babel.min.js"></script>
+<script src="shared/js/common.js"></script>
+<script src="shared/js/diagrams.js"></script>
+<script src="shared/js/runner.js"></script>
+<script src="shared/js/deck.js"></script>
+<script>
+/* خاص بهذا العرض: قلب بطاقات الاختبار + رسم خطوط شجرة الكومبوننتات.
+   في الشجرة: data-parent يرسم خطًا من الأب، data-label نص على الخط،
+   data-link يرسم سهمًا متقطعًا جانبيًا (مثل useContext الذي يقفز فوق الطوابق). */
+(function () {
+  document.querySelectorAll('.flip').forEach((card) =>
+    card.addEventListener('click', () => card.classList.toggle('flipped')));
+
+  const NS = 'http://www.w3.org/2000/svg';
+  let uid = 0;
+  function draw(stage) {
+    const c = stage.getBoundingClientRect();
+    if (!c.width) return;
+    let svg = stage.querySelector(':scope > svg.tree-lines');
+    if (!svg) {
+      svg = document.createElementNS(NS, 'svg');
+      svg.classList.add('tree-lines');
+      svg.dataset.uid = 'ah' + (++uid);
+      stage.prepend(svg);
+    }
+    stage.querySelectorAll(':scope > .edge-label').forEach((l) => l.remove());
+    svg.setAttribute('width', c.width);
+    svg.setAttribute('height', c.height);
+    const id = svg.dataset.uid;
+    const byId = {};
+    stage.querySelectorAll('.tnode[data-id]').forEach((n) => { byId[n.dataset.id] = n; });
+    const box = (n) => {
+      const r = n.getBoundingClientRect();
+      return { l: r.left - c.left, r: r.right - c.left, t: r.top - c.top, b: r.bottom - c.top, cx: r.left + r.width / 2 - c.left, cy: r.top + r.height / 2 - c.top };
+    };
+    const label = (text, cls, x, y) => {
+      const l = document.createElement('span');
+      l.className = 'edge-label ' + (cls || '');
+      l.textContent = text;
+      l.style.left = x + 'px';
+      l.style.top = y + 'px';
+      stage.append(l);
+    };
+    let paths = `<defs><marker id="${id}" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 z" fill="var(--p4)"/></marker></defs>`;
+    Object.values(byId).forEach((n) => {
+      const p = n.dataset.parent && byId[n.dataset.parent];
+      if (p) {
+        const a = box(p), b = box(n), my = (a.b + b.t) / 2;
+        paths += `<path class="${n.dataset.edge || ''}" d="M${a.cx},${a.b} C${a.cx},${my} ${b.cx},${my} ${b.cx},${b.t}"/>`;
+        if (n.dataset.label) label(n.dataset.label, n.dataset.labelClass, a.cx + (b.cx - a.cx) * 0.8, my + (b.t - my) * 0.3);
+      }
+      const src = n.dataset.link && byId[n.dataset.link];
+      if (src) {
+        const a = box(src), b = box(n);
+        const x = Math.max(8, Math.min(a.l, b.l) - 70);
+        paths += `<path class="link" marker-end="url(#${id})" d="M${a.l},${a.cy} C${x},${a.cy} ${x},${b.cy} ${b.l - 4},${b.cy}"/>`;
+        if (n.dataset.linkLabel) label(n.dataset.linkLabel, 'ctx', x + 22, (a.cy + b.cy) / 2);
+      }
+    });
+    svg.innerHTML = paths;
+  }
+  const drawAll = (root = document) => root.querySelectorAll('[data-tree]').forEach(draw);
+  drawAll();
+  document.fonts?.ready.then(() => drawAll());
+  window.addEventListener('load', () => drawAll());
+  window.addEventListener('resize', () => drawAll());
+  document.addEventListener('deck:slide', (e) => requestAnimationFrame(() => drawAll(e.detail.slide)));
+})();
+</script>
+</body>
+</html>
