@@ -1,0 +1,547 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Babel Playground</title>
+<!--
+  How Babel compiles JavaScript — a live playground.
+  No build step: Babel itself runs in the page (vendor/babel.min.js = @babel/standalone 7.26).
+
+  Run:  python3 -m http.server   (from this folder)  → http://localhost:8000
+  (Opening the file directly with file:// also works.)
+-->
+<style>
+  :root {
+    --bg: #0f1117; --panel: #171a23; --panel-2: #1e2230; --line: #2a2f40;
+    --text: #e6e8ef; --muted: #8a90a6; --accent: #f5da55; /* Babel yellow */
+    --blue: #7aa2f7; --green: #9ece6a; --red: #f7768e; --purple: #bb9af7; --orange: #ff9e64;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg); color: var(--text);
+    font: 14px/1.45 system-ui, -apple-system, "Segoe UI", sans-serif;
+    display: flex; flex-direction: column;
+  }
+
+  /* ── Header + pipeline ─────────────────────────────────────── */
+  header { padding: 12px 18px 10px; border-bottom: 1px solid var(--line); display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+  h1 { margin: 0; font-size: 18px; }
+  h1 b { color: var(--accent); }
+  .pipeline { display: flex; align-items: center; gap: 6px; font: 12px var(--mono); flex-wrap: wrap; }
+  .pipeline .box { padding: 4px 9px; border: 1px solid var(--line); border-radius: 6px; color: var(--muted); transition: .25s; }
+  .pipeline .step { cursor: pointer; }
+  .pipeline .step.on { border-color: var(--accent); color: var(--bg); background: var(--accent); }
+  .pipeline .arrow { color: var(--muted); }
+
+  /* ── Controls ──────────────────────────────────────────────── */
+  .controls { display: flex; gap: 18px; align-items: center; padding: 10px 18px; border-bottom: 1px solid var(--line); flex-wrap: wrap; }
+  .controls label { color: var(--muted); font-size: 12px; display: flex; gap: 6px; align-items: center; }
+  select, button { font: inherit; color: var(--text); background: var(--panel-2); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; }
+  button { cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; background: transparent; border-right: 1px solid var(--line); padding: 5px 10px; }
+  .seg button:last-child { border-right: 0; }
+  .seg button.on { background: var(--accent); color: #111; font-weight: 600; }
+  input[type=checkbox] { accent-color: var(--accent); }
+
+  /* ── Main two-column area ──────────────────────────────────── */
+  main { flex: 1; display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); min-height: 0; }
+  .pane { background: var(--panel); display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+  .pane-head { display: flex; align-items: center; gap: 4px; padding: 6px 10px; background: var(--panel-2); border-bottom: 1px solid var(--line); font-size: 12px; color: var(--muted); }
+  .pane-head .grow { flex: 1; }
+  .tab { background: transparent; border: 0; border-bottom: 2px solid transparent; border-radius: 0; color: var(--muted); padding: 4px 8px; }
+  .tab.on { color: var(--text); border-bottom-color: var(--accent); }
+  .stat { font: 12px var(--mono); }
+  .stat .up { color: var(--red); } .stat .down { color: var(--green); }
+
+  textarea, pre { margin: 0; flex: 1; min-height: 0; overflow: auto; padding: 12px 14px; font: 13px/1.55 var(--mono); color: var(--text); background: transparent; border: 0; outline: none; resize: none; white-space: pre; tab-size: 2; }
+  textarea::selection { background: rgba(245, 218, 85, .45); }
+  .view { display: none; flex: 1; min-height: 0; flex-direction: column; }
+  .view.on { display: flex; }
+  .error { color: var(--red); white-space: pre-wrap; }
+  .hint { padding: 8px 14px; font-size: 12px; color: var(--muted); border-top: 1px solid var(--line); }
+  .hint code { color: var(--accent); font-family: var(--mono); }
+
+  /* Tokens view */
+  .tokens { padding: 12px 14px; overflow: auto; display: flex; flex-wrap: wrap; gap: 6px; align-content: flex-start; }
+  .tok { font: 12px var(--mono); border: 1px solid var(--line); border-radius: 5px; overflow: hidden; display: inline-flex; cursor: pointer; }
+  .tok span { padding: 2px 6px; }
+  .tok .t { background: var(--panel-2); color: var(--muted); }
+  .tok.kw .v { color: var(--purple); } .tok.name .v { color: var(--blue); }
+  .tok.str .v { color: var(--green); } .tok.num .v { color: var(--orange); }
+
+  /* AST view */
+  .ast { padding: 10px 14px; overflow: auto; font: 12.5px/1.6 var(--mono); }
+  .ast details { margin-left: 14px; }
+  .ast > details { margin-left: 0; }
+  .ast summary { cursor: pointer; list-style: none; white-space: nowrap; }
+  .ast summary::before { content: "▸ "; color: var(--muted); }
+  .ast details[open] > summary::before { content: "▾ "; }
+  .ast summary:hover .type { text-decoration: underline; }
+  .ast .key { color: var(--muted); }
+  .ast .type { color: var(--accent); }
+  .ast .val { color: var(--green); }
+  .ast .leaf { margin-left: 28px; white-space: nowrap; }
+
+  /* Plugins view */
+  .plugins { padding: 12px 14px; overflow: auto; font: 12.5px/1.7 var(--mono); }
+  .plugins h3 { font: 600 13px system-ui; margin: 4px 0 8px; color: var(--text); }
+  .plugins .p { color: var(--blue); } .plugins .why { color: var(--muted); }
+  .plugins .custom { color: var(--orange); }
+
+  /* Run-both strip */
+  .run { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border-top: 1px solid var(--line); max-height: 22vh; }
+  .run > div { background: #0b0d12; padding: 8px 14px; font: 12px/1.5 var(--mono); overflow: auto; white-space: pre-wrap; }
+  .run .lbl { color: var(--muted); display: block; margin-bottom: 2px; }
+  .run .same { color: var(--green); } .run .diff { color: var(--red); }
+  .run[hidden] { display: none; }
+
+  @media (max-width: 900px) { main { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+
+<header>
+  <h1><b>Babel</b> — how it compiles your JavaScript</h1>
+  <!-- Babel's whole job in one line. Click a step to jump to the view that shows it. -->
+  <div class="pipeline">
+    <span class="box">your code</span><span class="arrow">→</span>
+    <span class="box step" data-goto="tokens">① parse</span><span class="arrow">→</span>
+    <span class="box step" data-goto="ast">AST</span><span class="arrow">→</span>
+    <span class="box step" data-goto="plugins">② transform (plugins)</span><span class="arrow">→</span>
+    <span class="box step" data-goto="output">③ generate</span><span class="arrow">→</span>
+    <span class="box">old-browser code</span>
+  </div>
+</header>
+
+<div class="controls">
+  <label>Example
+    <select id="example"></select>
+  </label>
+
+  <!-- The TARGET decides what Babel rewrites: older browser → more rewriting. -->
+  <label>Target browser
+    <span class="seg" id="targets">
+      <button data-target="none">none (parse+print only)</button>
+      <button data-target="modern">Chrome latest</button>
+      <button data-target="chrome60">Chrome 60 (2017)</button>
+      <button data-target="ie11" class="on">IE 11</button>
+    </span>
+  </label>
+
+  <label><input type="checkbox" id="jsx" checked> JSX (preset-react)</label>
+  <label><input type="checkbox" id="removeConsole"> our plugin: remove console.*</label>
+  <label><input type="checkbox" id="hideHelpers"> hide helper functions</label>
+
+  <button id="runBoth" title="Run the original and the compiled code and compare console output">▶ Run both</button>
+</div>
+
+<main>
+  <!-- LEFT: what you write -->
+  <section class="pane">
+    <div class="pane-head"><span>INPUT — modern JS (editable)</span><span class="grow"></span><span class="stat" id="inStat"></span></div>
+    <textarea id="input" spellcheck="false"></textarea>
+    <div class="hint">Edit the code — the right side updates as you type. Click a token or AST node to highlight its source here.</div>
+  </section>
+
+  <!-- RIGHT: what Babel produces, plus the in-between steps -->
+  <section class="pane">
+    <div class="pane-head">
+      <button class="tab" data-view="tokens">① Tokens</button>
+      <button class="tab" data-view="ast">① AST</button>
+      <button class="tab" data-view="plugins">② Plugins used</button>
+      <button class="tab on" data-view="output">③ Output</button>
+      <span class="grow"></span><span class="stat" id="outStat"></span>
+    </div>
+    <div class="view" id="view-tokens"><div class="tokens" id="tokens"></div>
+      <div class="hint">The parser first cuts the text into <b>tokens</b> — the "words" of JavaScript. Spaces and comments are gone.</div></div>
+    <div class="view" id="view-ast"><div class="ast" id="ast"></div>
+      <div class="hint">Then it arranges the tokens into a tree: the <b>AST</b>. Every node has a <code>type</code>. Plugins only ever see this tree, never your text.</div></div>
+    <div class="view" id="view-plugins"><div class="plugins" id="plugins"></div>
+      <div class="hint"><code>preset-env</code> is a bundle of small plugins. It compares your target with a compatibility table and switches on only the ones that target needs.</div></div>
+    <div class="view on" id="view-output"><pre id="output"></pre>
+      <div class="hint">The generator walks the changed tree and prints it back out as text. Try different <b>targets</b> — same input, very different output.</div></div>
+  </section>
+</main>
+
+<!-- Proof that the compiled code does the same thing -->
+<div class="run" id="run" hidden>
+  <div><span class="lbl">console — original</span><span id="runIn"></span></div>
+  <div><span class="lbl">console — compiled <span id="runVerdict"></span></span><span id="runOut"></span></div>
+</div>
+
+<script src="vendor/babel.min.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════════════
+// 1. Examples — one modern feature per snippet
+// ════════════════════════════════════════════════════════════════════
+const EXAMPLES = {
+  "Arrow function + const": `const double = (n) => n * 2;
+let total = double(21);
+console.log(total);`,
+
+  "Class + class fields": `class Counter {
+  count = 0;
+  static created = 0;
+
+  increment() {
+    this.count++;
+    return this;
+  }
+}
+
+const c = new Counter().increment().increment();
+console.log(c.count);`,
+
+  "Optional chaining + ??": `const user = { profile: null };
+
+const city = user.profile?.address?.city ?? "Unknown";
+const len  = user.tags?.length ?? 0;
+
+console.log(city, len);`,
+
+  "Destructuring, spread, defaults": `function makeUser({ name, age = 18 }, ...roles) {
+  const base = { active: true };
+  return { ...base, name, age, roles };
+}
+
+const [first, , third] = ["a", "b", "c"];
+console.log(makeUser({ name: "Sara" }, "admin", "editor"), first, third);`,
+
+  "Template literals": `const name = "Omar";
+const items = 3;
+console.log(\`Hi \${name}, you have \${items * 2} new messages\`);`,
+
+  "async / await": `const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+
+async function load() {
+  await wait(50);
+  console.log("loaded!");
+  return 42;
+}
+
+load().then((v) => console.log("value:", v));`,
+
+  "JSX component": `function Card({ title, children }) {
+  return (
+    <div className="card">
+      <h2>{title}</h2>
+      {children}
+      <button onClick={() => alert("hi")}>Say hi</button>
+    </div>
+  );
+}`,
+
+  "console.* (try our plugin)": `function login(user) {
+  console.log("logging in", user);
+  const ok = user.name.length > 0;
+  console.warn("deprecated API");
+  return ok;
+}
+
+console.info(login({ name: "Lina" }));`,
+
+  "Already-old code (nothing to do)": `var a = 1;
+function add(x, y) {
+  return x + y;
+}
+console.log(add(a, 2));`,
+};
+
+// ════════════════════════════════════════════════════════════════════
+// 2. Our own Babel plugin — same shape as node-demo/plugins/remove-console.js
+//    A plugin is a function that returns { visitor: { NodeType(path) {...} } }
+// ════════════════════════════════════════════════════════════════════
+function removeConsolePlugin({ types: t }) {
+  return {
+    name: "remove-console (ours)",
+    visitor: {
+      CallExpression(path) {
+        const callee = path.node.callee;
+        if (t.isMemberExpression(callee) && t.isIdentifier(callee.object, { name: "console" })) {
+          path.remove();
+        }
+      },
+    },
+  };
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 3. Target presets → the `targets` option of @babel/preset-env
+// ════════════════════════════════════════════════════════════════════
+const TARGETS = {
+  none: null,                          // no preset-env at all
+  modern: "last 1 chrome version",
+  chrome60: { chrome: "60" },
+  ie11: "ie 11",
+};
+
+// ── DOM refs ─────────────────────────────────────────────────────────
+const $ = (id) => document.getElementById(id);
+const input = $("input"), output = $("output");
+let target = "ie11";
+let view = "output";
+let last = null; // last successful compile result
+
+// ════════════════════════════════════════════════════════════════════
+// 4. Compile — this is the whole Babel call
+// ════════════════════════════════════════════════════════════════════
+function compile() {
+  const code = input.value;
+
+  const presets = [];
+  if (TARGETS[target]) presets.push(["env", { targets: TARGETS[target], modules: false, debug: true }]);
+  if ($("jsx").checked) presets.push(["react", { runtime: "classic" }]);
+
+  const plugins = [];
+  if ($("removeConsole").checked) plugins.push(removeConsolePlugin);
+
+  // preset-env's debug mode prints the plugins it picked to console.log — capture it.
+  const debugLines = [];
+  const realLog = console.log;
+  console.log = (...args) => debugLines.push(args.join(" "));
+
+  const t0 = performance.now();
+  try {
+    const result = Babel.transform(code, {
+      presets,
+      plugins,
+      ast: true,                          // also give us the AST of the OUTPUT
+      parserOpts: { tokens: true, plugins: ["jsx"] },
+      sourceType: "module",
+    });
+    // A second, plugin-free parse gives us the AST + tokens of the INPUT.
+    const inputAst = Babel.transform(code, {
+      ast: true, code: false, presets: [], plugins: [],
+      parserOpts: { tokens: true, plugins: ["jsx"] }, sourceType: "module",
+    }).ast;
+
+    last = { code: result.code, inputAst, ms: performance.now() - t0, debug: debugLines.join("\n") };
+    renderAll();
+  } catch (err) {
+    last = null;
+    output.innerHTML = "";
+    const pre = document.createElement("span");
+    pre.className = "error";
+    pre.textContent = "✗ Babel could not parse this:\n\n" + err.message;
+    output.appendChild(pre);
+    $("outStat").textContent = "";
+    showView("output");
+  } finally {
+    console.log = realLog;
+  }
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 5. Rendering each step
+// ════════════════════════════════════════════════════════════════════
+function renderAll() {
+  renderOutput();
+  renderTokens();
+  renderAst();
+  renderPlugins();
+}
+
+// ③ Output
+function renderOutput() {
+  let code = last.code;
+  if ($("hideHelpers").checked) {
+    // Babel injects helpers like `function _classCallCheck(...) {...}` as one-liners at the top.
+    code = code.split("\n").filter((l) => !/^function _\w+\(/.test(l)).join("\n");
+  }
+  output.textContent = code;
+
+  const inBytes = new Blob([input.value]).size;
+  const outBytes = new Blob([last.code]).size;
+  const pct = Math.round((outBytes / inBytes - 1) * 100);
+  $("inStat").textContent = `${inBytes} B`;
+  $("outStat").innerHTML =
+    `${outBytes} B <span class="${pct > 0 ? "up" : "down"}">(${pct > 0 ? "+" : ""}${pct}%)</span> · ${last.ms.toFixed(1)} ms`;
+}
+
+// ① Tokens
+function renderTokens() {
+  const box = $("tokens");
+  box.innerHTML = "";
+  const tokens = (last.inputAst.tokens || []).filter((t) => t.type !== "CommentLine" && t.type !== "CommentBlock");
+  for (const tok of tokens) {
+    const label = typeof tok.type === "string" ? tok.type : tok.type.label;
+    const text = input.value.slice(tok.start, tok.end);
+    if (label === "eof") continue;
+    const el = document.createElement("span");
+    el.className = "tok " + tokenClass(tok, label);
+    el.innerHTML = `<span class="t"></span><span class="v"></span>`;
+    el.firstChild.textContent = label;
+    el.lastChild.textContent = text;
+    el.onclick = () => select(tok.start, tok.end);
+    box.appendChild(el);
+  }
+}
+function tokenClass(tok, label) {
+  // Keyword tokens (const, class, return, ...) are labelled with their own text.
+  if (/^[a-z]+$/.test(label) && label === input.value.slice(tok.start, tok.end)) return "kw";
+  if (label === "name" || label === "jsxName") return "name";
+  if (label === "string" || label === "template" || label === "jsxText") return "str";
+  if (label === "num") return "num";
+  return "";
+}
+
+// ① AST — collapsible tree; click a node to select its source text
+const SKIP = new Set(["start", "end", "loc", "range", "extra", "comments", "leadingComments",
+  "trailingComments", "innerComments", "tokens", "errors", "directives", "interpreter", "sourceType"]);
+
+function renderAst() {
+  const box = $("ast");
+  box.innerHTML = "";
+  box.appendChild(astNode("program", last.inputAst.program, 0));
+}
+
+function astNode(key, node, depth) {
+  // Leaf: a plain value (string, number, boolean, null)
+  if (node === null || typeof node !== "object") {
+    const d = document.createElement("div");
+    d.className = "leaf";
+    d.innerHTML = `<span class="key"></span> <span class="val"></span>`;
+    d.firstChild.textContent = key + ":";
+    d.lastChild.textContent = JSON.stringify(node);
+    return d;
+  }
+
+  const det = document.createElement("details");
+  det.open = depth < 4;
+  const sum = document.createElement("summary");
+  const isArray = Array.isArray(node);
+  const label = isArray ? `[${node.length}]` : node.type;
+  // A short preview helps: Identifier "double", NumericLiteral 2, ...
+  const preview = !isArray && (node.name ?? (node.value !== undefined && typeof node.value !== "object" ? JSON.stringify(node.value) : node.operator ?? node.kind ?? ""));
+  sum.innerHTML = `<span class="key"></span> <span class="type"></span> <span class="val"></span>`;
+  sum.children[0].textContent = key + ":";
+  sum.children[1].textContent = label;
+  sum.children[2].textContent = preview || "";
+  if (!isArray && node.start != null) {
+    sum.addEventListener("click", () => select(node.start, node.end));
+  }
+  det.appendChild(sum);
+
+  const entries = isArray ? node.map((v, i) => [i, v]) : Object.entries(node).filter(([k]) => !SKIP.has(k) && k !== "type");
+  for (const [k, v] of entries) {
+    // Hide boring false/null flags to keep the tree readable
+    if (!isArray && (v === false || v === null || (Array.isArray(v) && v.length === 0))) continue;
+    det.appendChild(astNode(k, v, depth + 1));
+  }
+  return det;
+}
+
+// ② Plugins — parsed from preset-env's debug output
+function renderPlugins() {
+  const box = $("plugins");
+  const lines = [];
+
+  if (!TARGETS[target]) {
+    lines.push(`<h3>No preset-env</h3><span class="why">Babel still parses and re-prints the code — but nothing is rewritten.</span>`);
+  } else {
+    const section = (last.debug.split("Using plugins:")[1] || "").split("Using polyfills")[0];
+    const used = section.split("\n").map((l) => l.trim()).filter((l) => l && !l.startsWith("syntax-"));
+    lines.push(`<h3>preset-env switched on ${used.length} plugins for <span class="custom">${escapeHtml(JSON.stringify(TARGETS[target]))}</span></h3>`);
+    if (!used.length) lines.push(`<span class="why">None — this browser supports everything natively.</span>`);
+    for (const l of used) {
+      const m = l.match(/^(\S+)\s*(.*)$/);
+      lines.push(`<div><span class="p">${escapeHtml(m[1])}</span> <span class="why">${escapeHtml(m[2])}</span></div>`);
+    }
+  }
+  if ($("jsx").checked) lines.push(`<h3 style="margin-top:14px">preset-react</h3><div><span class="p">transform-react-jsx</span> <span class="why">&lt;div&gt; → React.createElement("div")</span></div>`);
+  if ($("removeConsole").checked) lines.push(`<h3 style="margin-top:14px">Our own plugin</h3><div><span class="custom">remove-console</span> <span class="why">CallExpression console.* → removed</span></div>`);
+  box.innerHTML = lines.join("");
+}
+
+// ── helpers ──────────────────────────────────────────────────────────
+function select(start, end) {
+  input.focus();
+  input.setSelectionRange(start, end);
+}
+function escapeHtml(s) {
+  return s.replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+}
+function showView(name) {
+  view = name;
+  document.querySelectorAll(".tab").forEach((b) => b.classList.toggle("on", b.dataset.view === name));
+  document.querySelectorAll(".view").forEach((v) => v.classList.toggle("on", v.id === "view-" + name));
+  const step = { tokens: "tokens", ast: "ast", plugins: "plugins", output: "output" }[name];
+  document.querySelectorAll(".pipeline .step").forEach((s) => s.classList.toggle("on", s.dataset.goto === step));
+}
+
+// ════════════════════════════════════════════════════════════════════
+// 6. "Run both" — execute original and compiled code, compare console output
+// ════════════════════════════════════════════════════════════════════
+async function runCode(code) {
+  const out = [];
+  const fake = {};
+  for (const m of ["log", "info", "warn", "error"]) {
+    fake[m] = (...a) => out.push(a.map((v) => (typeof v === "string" ? v : JSON.stringify(v))).join(" "));
+  }
+  try {
+    // `console` is shadowed by a parameter, so the snippet logs into our array.
+    new Function("console", "React", code)(fake, { createElement: () => ({}) });
+  } catch (e) {
+    out.push("✗ " + e.message);
+  }
+  await new Promise((r) => setTimeout(r, 200)); // let async examples finish
+  return out.join("\n");
+}
+
+$("runBoth").onclick = async () => {
+  if (!last) return;
+  $("run").hidden = false;
+  $("runIn").textContent = $("runOut").textContent = "running…";
+  // The original needs JSX compiled to run at all (no browser understands JSX).
+  const original = /<[A-Za-z]/.test(input.value)
+    ? Babel.transform(input.value, { presets: [["react", { runtime: "classic" }]] }).code
+    : input.value;
+  const [a, b] = await Promise.all([runCode(original), runCode(last.code)]);
+  $("runIn").textContent = a || "(no output)";
+  $("runOut").textContent = b || "(no output)";
+  $("runVerdict").innerHTML = a === b
+    ? `<span class="same">✓ same output</span>`
+    : $("removeConsole").checked
+      ? `<span class="diff">≠ different — expected: our plugin deleted the console.* calls</span>`
+      : `<span class="diff">≠ different</span>`;
+};
+
+// ════════════════════════════════════════════════════════════════════
+// 7. Wiring
+// ════════════════════════════════════════════════════════════════════
+const sel = $("example");
+for (const name of Object.keys(EXAMPLES)) sel.add(new Option(name, name));
+sel.onchange = () => {
+  input.value = EXAMPLES[sel.value];
+  $("removeConsole").checked = sel.value.startsWith("console");
+  $("run").hidden = true;
+  compile();
+};
+
+$("targets").addEventListener("click", (e) => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  target = b.dataset.target;
+  document.querySelectorAll("#targets button").forEach((x) => x.classList.toggle("on", x === b));
+  compile();
+});
+
+["jsx", "removeConsole"].forEach((id) => ($(id).onchange = compile));
+$("hideHelpers").onchange = () => last && renderOutput();
+
+let timer;
+input.addEventListener("input", () => { clearTimeout(timer); timer = setTimeout(compile, 200); });
+document.querySelectorAll(".tab").forEach((b) => (b.onclick = () => showView(b.dataset.view)));
+document.querySelectorAll(".pipeline .step").forEach((s) => (s.onclick = () => showView(s.dataset.goto)));
+
+input.value = EXAMPLES[sel.value];
+showView("output");
+compile();
+</script>
+</body>
+</html>

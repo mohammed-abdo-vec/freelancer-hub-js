@@ -1,0 +1,14 @@
+{
+  "presets": [
+    ["@babel/preset-env", { "targets": "ie 11" }],
+    ["@babel/preset-react", { "runtime": "classic" }]
+  ],
+  "env": {
+    "modern": {
+      "presets": [
+        ["@babel/preset-env", { "targets": "last 2 Chrome versions" }],
+        ["@babel/preset-react", { "runtime": "classic" }]
+      ]
+    }
+  }
+}
