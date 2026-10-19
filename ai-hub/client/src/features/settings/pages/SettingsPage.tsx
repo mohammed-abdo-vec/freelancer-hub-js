@@ -1,5 +1,5 @@
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
-import { PagePlaceholder } from '@/components/common/PagePlaceholder';
+import { PagePlaceholder } from '@/shared/components/PagePlaceholder';
 
 export function SettingsPage() {
   return (

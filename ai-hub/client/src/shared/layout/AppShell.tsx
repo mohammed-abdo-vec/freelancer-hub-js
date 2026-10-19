@@ -5,15 +5,19 @@ import LinearProgress from '@mui/material/LinearProgress';
 import { useTheme } from '@mui/material/styles';
 import useMediaQuery from '@mui/material/useMediaQuery';
 import { Outlet, useNavigate } from 'react-router';
-import { useLocalStorageState } from '@/hooks/useLocalStorageState';
-import { paths } from '@/routes/paths';
-import { SideNav } from './SideNav';
+import { useLocalStorageState } from '@/shared/hooks/useLocalStorageState';
+import { paths } from '@/shared/config/paths';
+import { SideNav, type SideNavSlots } from './SideNav';
 import { TopBar } from './TopBar';
 
 const DRAWER_WIDTH = 260;
 const RAIL_WIDTH = 68;
 
-export function AppShell() {
+/**
+ * Sidebar + content layout. It knows nothing about features: the app passes in the
+ * nav items and what to render in the sidebar's content/footer slots.
+ */
+export function AppShell(slots: SideNavSlots) {
   const theme = useTheme();
   // noSsr: read the real value on first render so desktop never flashes the mobile layout
   const isDesktop = useMediaQuery(theme.breakpoints.up('md'), { noSsr: true });
@@ -51,7 +55,7 @@ export function AppShell() {
             '& .MuiDrawer-paper': { width, overflowX: 'hidden', transition: widthTransition },
           }}
         >
-          <SideNav collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
+          <SideNav {...slots} collapsed={collapsed} onToggle={() => setCollapsed(!collapsed)} />
         </Drawer>
       ) : (
         <Drawer
@@ -61,7 +65,7 @@ export function AppShell() {
           ModalProps={{ keepMounted: true }}
           sx={{ '& .MuiDrawer-paper': { width: DRAWER_WIDTH, maxWidth: '85vw' } }}
         >
-          <SideNav onToggle={() => setMobileOpen(false)} onNavigate={() => setMobileOpen(false)} />
+          <SideNav {...slots} onToggle={() => setMobileOpen(false)} onNavigate={() => setMobileOpen(false)} />
         </Drawer>
       )}
 

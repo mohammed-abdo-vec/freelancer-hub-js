@@ -1,9 +1,9 @@
 import Box from '@mui/material/Box';
 import Typography from '@mui/material/Typography';
 import { useParams } from 'react-router';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { Composer } from './Composer';
-import { mockConversations } from './mockConversations';
+import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
+import { Composer } from '../components/Composer';
+import { mockConversations } from '../data/mockConversations';
 
 export function ChatPage() {
   const { conversationId } = useParams();

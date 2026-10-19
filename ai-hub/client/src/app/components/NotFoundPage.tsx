@@ -2,8 +2,8 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router';
-import { useDocumentTitle } from '@/hooks/useDocumentTitle';
-import { paths } from '@/routes/paths';
+import { useDocumentTitle } from '@/shared/hooks/useDocumentTitle';
+import { paths } from '@/shared/config/paths';
 
 export function NotFoundPage() {
   useDocumentTitle('Page not found');

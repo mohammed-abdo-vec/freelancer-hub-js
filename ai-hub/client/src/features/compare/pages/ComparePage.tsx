@@ -1,5 +1,5 @@
 import CompareArrowsRoundedIcon from '@mui/icons-material/CompareArrowsRounded';
-import { PagePlaceholder } from '@/components/common/PagePlaceholder';
+import { PagePlaceholder } from '@/shared/components/PagePlaceholder';
 
 export function ComparePage() {
   return (

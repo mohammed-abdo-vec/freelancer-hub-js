@@ -1,6 +1,6 @@
 import { RouterProvider } from 'react-router';
-import { router } from '@/router';
-import { AppThemeProvider } from '@/theme/AppThemeProvider';
+import { AppThemeProvider } from '@/shared/theme/AppThemeProvider';
+import { router } from './router';
 
 function App() {
   return (

@@ -6,7 +6,7 @@ import Typography from '@mui/material/Typography';
 import EditSquareIcon from '@mui/icons-material/EditSquare';
 import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import { Link as RouterLink } from 'react-router';
-import { paths } from '@/routes/paths';
+import { paths } from '@/shared/config/paths';
 
 type Props = { onOpenNav: () => void };
 

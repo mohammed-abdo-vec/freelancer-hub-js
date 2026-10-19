@@ -2,8 +2,8 @@ import Button from '@mui/material/Button';
 import Link from '@mui/material/Link';
 import Typography from '@mui/material/Typography';
 import { Link as RouterLink } from 'react-router';
-import { paths } from '@/routes/paths';
-import { AuthLayout } from './AuthLayout';
+import { paths } from '@/shared/config/paths';
+import { AuthLayout } from '../components/AuthLayout';
 
 // TODO(Phase 3): name + email + password form
 export function RegisterPage() {

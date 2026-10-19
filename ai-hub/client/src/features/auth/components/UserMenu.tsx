@@ -16,7 +16,8 @@ import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import SettingsBrightnessRoundedIcon from '@mui/icons-material/SettingsBrightnessRounded';
 import SettingsRoundedIcon from '@mui/icons-material/SettingsRounded';
 import { useNavigate } from 'react-router';
-import { paths } from '@/routes/paths';
+import { paths } from '@/shared/config/paths';
+import { useSideNav } from '@/shared/layout';
 
 // TODO(Phase 3): read the signed-in user from the auth store
 const user = { name: 'Ada Lovelace', email: 'ada@example.com' };
@@ -27,9 +28,9 @@ const themeOptions = [
   { value: 'system', label: 'System', icon: SettingsBrightnessRoundedIcon },
 ] as const;
 
-type Props = { collapsed: boolean; onNavigate?: () => void };
-
-export function UserMenu({ collapsed, onNavigate }: Props) {
+/** Avatar button + account menu, rendered in the sidebar's footer slot. */
+export function UserMenu() {
+  const { collapsed, onNavigate } = useSideNav();
   const [anchorEl, setAnchorEl] = useState<HTMLElement | null>(null);
   const { mode, setMode } = useColorScheme();
   const navigate = useNavigate();

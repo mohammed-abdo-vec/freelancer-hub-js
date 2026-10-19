@@ -1,5 +1,5 @@
 import SpaceDashboardRoundedIcon from '@mui/icons-material/SpaceDashboardRounded';
-import { PagePlaceholder } from '@/components/common/PagePlaceholder';
+import { PagePlaceholder } from '@/shared/components/PagePlaceholder';
 
 export function DashboardPage() {
   return (

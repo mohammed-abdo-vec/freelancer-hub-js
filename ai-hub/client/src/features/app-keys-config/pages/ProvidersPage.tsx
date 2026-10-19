@@ -1,5 +1,5 @@
 import KeyRoundedIcon from '@mui/icons-material/KeyRounded';
-import { PagePlaceholder } from '@/components/common/PagePlaceholder';
+import { PagePlaceholder } from '@/shared/components/PagePlaceholder';
 
 export function ProvidersPage() {
   return (

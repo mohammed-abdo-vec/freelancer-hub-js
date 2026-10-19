@@ -4,13 +4,14 @@ import ListItemButton from '@mui/material/ListItemButton';
 import ListItemText from '@mui/material/ListItemText';
 import ListSubheader from '@mui/material/ListSubheader';
 import { NavLink } from 'react-router';
-import { mockConversations } from '@/features/chat/mockConversations';
-import { ChatPage } from '@/routes/pages';
-import { paths } from '@/routes/paths';
+import { paths } from '@/shared/config/paths';
+import { useSideNav } from '@/shared/layout';
+import { mockConversations } from '../data/mockConversations';
+import { ChatPage } from '../routes';
 
-type Props = { onNavigate?: () => void };
-
-export function RecentChats({ onNavigate }: Props) {
+/** Chat history, rendered in the sidebar's content slot. */
+export function RecentChats() {
+  const { onNavigate } = useSideNav();
   const sections = [
     { title: 'Pinned', items: mockConversations.filter((c) => c.pinned) },
     { title: 'Recents', items: mockConversations.filter((c) => !c.pinned) },

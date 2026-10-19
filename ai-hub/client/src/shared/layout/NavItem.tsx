@@ -4,7 +4,7 @@ import ListItemText from '@mui/material/ListItemText';
 import Tooltip from '@mui/material/Tooltip';
 import Typography from '@mui/material/Typography';
 import { NavLink } from 'react-router';
-import type { NavItemConfig } from './navItems';
+import type { NavItemConfig } from './types';
 
 type Props = {
   item: NavItemConfig;
