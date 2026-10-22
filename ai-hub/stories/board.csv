@@ -1,0 +1,413 @@
+Issue ID,Summary,Issue Type,Epic,Sprint,Priority,Story Points,Status,Labels,Depends On,Implementation Spec,Description
+FND-1,FND-1 Finish client tooling and install dependencies,Task,Foundation,M1 · Foundation,Highest,2,To Do,foundation tooling,,ai-hub/implementation-specs/FND-1-tooling-and-dependencies/SPEC.md,"**As a** developer **I want** every library, script and dev-server setting in place **so that** feature stories only have to write feature code.
+
+## Acceptance criteria
+- [ ] Every package from SPEC.md §4 is installed (latest stable).
+- [ ] The Vite dev server proxies `/api` to `http://localhost:4000`.
+- [ ] Prettier is configured (`singleQuote`, `printWidth: 110`), with `dev`, `build`, `lint`, `format` and `test` scripts.
+- [ ] `src/shared/types/api.ts` is a verbatim copy of `server/src/types/api.ts`.
+- [ ] `.env.example` contains `VITE_API_URL=/api`.
+- [ ] `npm run dev`, `npm run build` and `npm run lint` all work.
+
+## Out of scope
+- Using any of the new libraries (that's what later stories do).
+
+**Source:** SPEC.md §4, §8 Phase 1"
+FND-2,FND-2 Align the theme with the design spec,Task,Foundation,M1 · Foundation,High,2,To Do,foundation theme ui,FND-1,ai-hub/implementation-specs/FND-2-theme-alignment/SPEC.md,"**As a** user **I want** a consistent, branded look in light and dark mode **so that** the app feels polished and readable.
+
+## Acceptance criteria
+- [ ] Primary `#5B5BD6`, secondary `#0EA5E9`, and backgrounds light `#F7F7FB`/`#FFFFFF`, dark `#0F1117`/`#171A23`.
+- [ ] Inter Variable is the font (Roboto removed). Body is 15 px; h4–h6 use weight 600; code uses the monospace stack.
+- [ ] `borderRadius: 10`. Cards are outlined with no shadow. Dialogs have a 16 px radius.
+- [ ] Button, TextField, Tooltip and Paper overrides as in SPEC.md §6.1.
+- [ ] Text meets WCAG AA contrast in both themes. Theme switching still works with no flash.
+
+## Out of scope
+- The Settings → Appearance UI (SET-2).
+
+**Source:** SPEC.md §6.1"
+FND-3,"FND-3 Add query client, snackbars and query keys",Task,Foundation,M1 · Foundation,Highest,2,To Do,foundation data,FND-1,ai-hub/implementation-specs/FND-3-app-providers/SPEC.md,"**As a** developer **I want** TanStack Query and notistack wired into the app **so that** features can fetch data and show feedback consistently.
+
+## Acceptance criteria
+- [ ] `QueryClientProvider` wraps the router, with defaults from SPEC.md §5.5. Devtools render in dev only.
+- [ ] `SnackbarProvider` (notistack) is mounted and styled with MUI.
+- [ ] `queryKeys` factory exists exactly as in SPEC.md §5.5.
+
+## Out of scope
+- Any real query or mutation.
+
+**Source:** SPEC.md §5.5, §8 Phase 2"
+FND-4,"FND-4 Add API client, error helpers and session store",Task,Foundation,M1 · Foundation,Highest,3,To Do,foundation data auth,FND-1 FND-3,ai-hub/implementation-specs/FND-4-api-client-and-session/SPEC.md,"**As a** developer **I want** one typed HTTP client that adds the token, handles 401s and normalizes errors **so that** every feature talks to the API the same way.
+
+## Acceptance criteria
+- [ ] An `api` axios instance with `baseURL` from `VITE_API_URL` (default `/api`) adds `Authorization: Bearer <token>`.
+- [ ] Any 401 except on `/auth/login` clears the session and shows a single ""Session expired"" snackbar.
+- [ ] `getApiError`, `getErrorMessage` and `getFieldErrors` helpers exist.
+- [ ] A persisted `auth.store` (key `ai-hub-auth`) has `token`, `user`, `setSession()` and `clearSession()`.
+
+## Out of scope
+- Login and register UI (AUTH-1, AUTH-2). Redirects on 401 (AUTH-4, AUTH-6).
+
+**Source:** SPEC.md §3.2, §7.1, §7.2"
+FND-5,FND-5 Build the shared UI kit and format helpers,Task,Foundation,M1 · Foundation,High,3,To Do,foundation ui,FND-1 FND-2,ai-hub/implementation-specs/FND-5-shared-ui-kit/SPEC.md,"**As a** developer **I want** shared empty, error, confirm and avatar components plus number and time formatters **so that** every page handles states the same way.
+
+## Acceptance criteria
+- [ ] `EmptyState`, `ErrorState`, `ConfirmDialog`, `ProviderAvatar`, `RelativeTime` and `CopyButton` exist in `shared/components`.
+- [ ] `formatNumber(12400)` returns `""12.4k""`, `formatNumber(1_200_000)` returns `""1.2M""`, and `formatLatency(1830)` returns `""1.8 s""`.
+- [ ] Each component is accessible (labels, tooltips, dialog title) and works in both themes.
+
+## Out of scope
+- Feature-specific components (StatusChip, ModelPicker, Markdown).
+
+**Source:** SPEC.md §5.2 components/common, §5.6, §8 Phase 2"
+AUTH-1,AUTH-1 Create an account,Story,Authentication,M2 · Authentication,Highest,3,To Do,auth forms,FND-4 FND-5,ai-hub/implementation-specs/AUTH-1-register/SPEC.md,"**As a** visitor **I want** to create an account **so that** I can save my provider keys and conversations.
+
+## Acceptance criteria
+- [ ] The form has name, email and password (min 8 chars), validated client side with zod.
+- [ ] Server validation errors (`details[]`) show under the matching field.
+- [ ] A 409 shows ""An account with this email already exists"" under email.
+- [ ] On success the token is stored and the user goes to `/`.
+- [ ] There's a link to the sign-in page.
+
+**Source:** SPEC.md §2.1 AUTH-1, §9 Auth"
+AUTH-2,AUTH-2 Sign in,Story,Authentication,M2 · Authentication,Highest,2,To Do,auth forms,AUTH-1,ai-hub/implementation-specs/AUTH-2-sign-in/SPEC.md,"**As a** user **I want** to sign in with my email and password **so that** I can get back to my workspace.
+
+## Acceptance criteria
+- [ ] The form has email and password.
+- [ ] A 401 shows the server message in an `Alert` above the form.
+- [ ] On success, redirect to the `?redirect=` path, or `/`.
+
+**Source:** SPEC.md §2.1 AUTH-2, §9 Auth"
+AUTH-6,AUTH-6 Protect private routes,Story,Authentication,M2 · Authentication,Highest,2,To Do,auth routing,AUTH-2,ai-hub/implementation-specs/AUTH-6-route-guards/SPEC.md,"**As a** user **I want** private pages to need a session, and the sign-in pages to skip when I'm already signed in, **so that** I always land in the right place.
+
+## Acceptance criteria
+- [ ] Signed-out users who visit a private route go to `/login?redirect=<path>`.
+- [ ] Signed-in users who visit `/login` or `/register` go to `/`.
+- [ ] The 404 page needs no session.
+
+**Source:** SPEC.md §2.1 AUTH-6, §5.4"
+AUTH-3,AUTH-3 Keep me signed in across reloads,Story,Authentication,M2 · Authentication,High,2,To Do,auth,AUTH-6,ai-hub/implementation-specs/AUTH-3-session-persistence/SPEC.md,"**As a** user **I want** my session to survive a page reload **so that** I don't have to sign in again.
+
+## Acceptance criteria
+- [ ] The token and user are persisted.
+- [ ] On app start with a token, `GET /auth/me` runs behind a full-screen loader.
+- [ ] A 401 from that call clears the session.
+- [ ] The user menu shows the real name, email and initials.
+
+**Source:** SPEC.md §2.1 AUTH-3, §8 Phase 3"
+AUTH-4,AUTH-4 Handle expired sessions,Story,Authentication,M2 · Authentication,High,1,To Do,auth,AUTH-3,ai-hub/implementation-specs/AUTH-4-expired-session/SPEC.md,"**As a** user **I want** to be told when my session expires and sent back to where I was after signing in **so that** I don't lose my place.
+
+## Acceptance criteria
+- [ ] **Any** 401 from any API call (except login) clears the session.
+- [ ] The user is redirected to `/login?redirect=<current path>`.
+- [ ] A snackbar says ""Session expired"", shown once.
+- [ ] After signing in, the user returns to that path.
+
+**Source:** SPEC.md §2.1 AUTH-4, §9 Auth"
+AUTH-5,AUTH-5 Sign out,Story,Authentication,M2 · Authentication,High,1,To Do,auth,AUTH-3,ai-hub/implementation-specs/AUTH-5-sign-out/SPEC.md,"**As a** user **I want** to sign out **so that** nobody else using this browser can see my data.
+
+## Acceptance criteria
+- [ ] ""Sign out"" in the user menu clears the session and the **whole query cache**, then goes to `/login`.
+- [ ] A reusable `useSignOut()` hook is exported for Settings (SET-4).
+
+**Source:** SPEC.md §2.1 AUTH-5"
+PROV-1,PROV-1 See every supported provider,Story,Providers,M3 · Providers,Highest,3,To Do,providers ui,AUTH-3 FND-5,ai-hub/implementation-specs/PROV-1-provider-catalog/SPEC.md,"**As a** user **I want** to see every provider AI Hub supports and its connection status **so that** I know what I can connect.
+
+## Acceptance criteria
+- [ ] A card grid from `GET /providers` (xs 1, sm 2, lg 3 columns).
+- [ ] Each card shows a colored avatar, name, description, a status chip (**Connected** green, **Invalid key** red, **Not connected** grey), the masked key, and ""Checked 2 min ago"".
+- [ ] Filter tabs: All / Connected / Not connected.
+- [ ] Loading skeletons, an error state with Retry, and an empty state for a filter that matches nothing.
+- [ ] Not-connected cards show a **Connect** button (disabled until PROV-2) and a ""Get API key ↗"" link.
+
+**Source:** SPEC.md §2.2 PROV-1, §6.4"
+PROV-2,PROV-2 Connect a provider with an API key,Story,Providers,M3 · Providers,Highest,3,To Do,providers forms,PROV-1,ai-hub/implementation-specs/PROV-2-connect-provider/SPEC.md,"**As a** user **I want** to paste an API key and have it validated **so that** I can use that provider's models.
+
+## Acceptance criteria
+- [ ] ""Connect"" opens a dialog with an optional label and the API key (password field with show/hide, placeholder = `keyPlaceholder`), plus a ""Get an API key ↗"" link.
+- [ ] The submit button ""Validate & save"" shows a spinner (validation takes 0.5–3 s).
+- [ ] A 422 `PROVIDER_AUTH_FAILED` shows the message **under the key field** and keeps the dialog open.
+- [ ] Success closes the dialog and shows the snackbar ""<Provider> connected"". The card updates.
+- [ ] The raw key is never logged, cached or kept after the dialog closes.
+
+**Source:** SPEC.md §2.2 PROV-2, §9 Providers & Security"
+PROV-3,PROV-3 Test a connection,Story,Providers,M3 · Providers,High,2,To Do,providers,PROV-2,ai-hub/implementation-specs/PROV-3-test-connection/SPEC.md,"**As a** user **I want** to check that a saved key still works **so that** I can fix it before chatting.
+
+## Acceptance criteria
+- [ ] ""Test"" calls `POST /connections/:id/test` and shows a spinner while it runs.
+- [ ] The result is a snackbar: ""Working · 37 models · 412 ms"", or the error.
+- [ ] The card's status chip and ""Checked …"" time update.
+
+**Source:** SPEC.md §2.2 PROV-3"
+PROV-4,PROV-4 Replace a key or rename a connection,Story,Providers,M3 · Providers,Medium,2,To Do,providers forms,PROV-2,ai-hub/implementation-specs/PROV-4-edit-connection/SPEC.md,"**As a** user **I want** to rename a connection or swap in a new key **so that** I can rotate keys without losing conversations.
+
+## Acceptance criteria
+- [ ] The ""Edit"" dialog has a label and an optional new API key (leave it blank to keep the current key).
+- [ ] Same 422 handling as PROV-2 (inline under the key, dialog stays open).
+- [ ] Success shows a snackbar and the card updates.
+
+**Source:** SPEC.md §2.2 PROV-4"
+PROV-5,PROV-5 Remove a connection,Story,Providers,M3 · Providers,Medium,1,To Do,providers,PROV-2,ai-hub/implementation-specs/PROV-5-remove-connection/SPEC.md,"**As a** user **I want** to remove a provider key **so that** AI Hub no longer stores it.
+
+## Acceptance criteria
+- [ ] A confirm dialog: ""Remove OpenAI? Existing conversations stay, but you can't send messages with OpenAI until you reconnect.""
+- [ ] Confirming calls `DELETE /connections/:id`, shows a snackbar and the card returns to **Not connected**.
+
+**Source:** SPEC.md §2.2 PROV-5"
+PROV-6,PROV-6 Point new users to the free Mock AI provider,Story,Providers,M3 · Providers,Low,1,To Do,providers onboarding,PROV-1,ai-hub/implementation-specs/PROV-6-mock-banner/SPEC.md,"**As a** new user with no API keys **I want** to know I can try everything for free **so that** I can explore the app right away.
+
+## Acceptance criteria
+- [ ] If the `mock` provider is present, a dismissible info banner shows at the top of `/providers`: ""No API key yet? Connect **Mock AI** with any key starting with `mock-` to try everything for free.""
+- [ ] Dismissing it is remembered across reloads.
+
+**Source:** SPEC.md §2.2 PROV-6"
+CHAT-7,"CHAT-7 Browse, search and manage conversations",Story,Chat,M4 · Chat: read & organize,Highest,5,To Do,chat sidebar,AUTH-3 FND-5,ai-hub/implementation-specs/CHAT-7-conversation-list/SPEC.md,"**As a** user **I want** my conversation history in the sidebar, with search, pinning, renaming and deleting, **so that** I can find and organize past chats.
+
+## Acceptance criteria
+- [ ] The sidebar lists real conversations: a **Pinned** section, then the rest by recent activity.
+- [ ] A search field, debounced 300 ms, uses `?search=`.
+- [ ] Each item shows the title, a provider avatar and a relative time; the active item is highlighted.
+- [ ] Its kebab menu has Rename (inline edit), Pin/Unpin and Delete (confirm).
+- [ ] Deleting the open conversation navigates to `/chat`.
+- [ ] Loading, empty (""No conversations yet"") and error states.
+
+**Source:** SPEC.md §2.3 CHAT-7, §8 Phase 5"
+CHAT-14,CHAT-14 Open and read a conversation,Story,Chat,M4 · Chat: read & organize,Highest,3,To Do,chat thread,CHAT-7,ai-hub/implementation-specs/CHAT-14-read-conversation/SPEC.md,"> Added story: SPEC.md Phase 5 has this work but no story ID for it.
+
+**As a** user **I want** to open a past conversation and read its messages **so that** I can pick up where I left off.
+
+## Acceptance criteria
+- [ ] `/chat/:id` loads `GET /conversations/:id` and renders messages oldest first.
+- [ ] User messages are right-aligned bubbles (primary at 12 % opacity, plain text, line breaks kept); assistant messages are full width with an avatar and no bubble.
+- [ ] Messages with `status: 'error'` render an error `Alert` with the `error` text; `status: 'stopped'` shows a ""Stopped"" chip.
+- [ ] A deleted or unknown id shows a ""Conversation not found"" state with a ""New chat"" button.
+- [ ] Skeleton while loading; the document title is the conversation title.
+
+**Source:** SPEC.md §6.3, §8 Phase 5"
+CHAT-4,CHAT-4 Render Markdown and code in answers,Story,Chat,M4 · Chat: read & organize,High,3,To Do,chat markdown security,CHAT-14,ai-hub/implementation-specs/CHAT-4-rich-rendering/SPEC.md,"**As a** user **I want** answers rendered as formatted Markdown with highlighted, copyable code **so that** they are easy to read and reuse.
+
+## Acceptance criteria
+- [ ] Assistant messages render GitHub-flavored Markdown: tables, lists, and links that open in a new tab.
+- [ ] Code blocks are syntax highlighted, with a language label and a **Copy** button, a dark background in both themes, and horizontal scroll.
+- [ ] User messages stay plain text with line breaks kept.
+- [ ] Raw HTML or `<script>` in a reply shows as text and never runs.
+
+**Source:** SPEC.md §2.3 CHAT-4, §6.3, §7.5, §9 Security"
+CHAT-5,"CHAT-5 Show model, tokens and latency per answer",Story,Chat,M4 · Chat: read & organize,Medium,2,To Do,chat,CHAT-14,ai-hub/implementation-specs/CHAT-5-message-metadata/SPEC.md,"**As a** user **I want** to see which model answered, how many tokens it used and how long it took **so that** I can compare cost and speed.
+
+## Acceptance criteria
+- [ ] Each assistant message has a footer with the provider avatar, model, `↑ in / ↓ out` tokens, latency (""1.8 s"") and a Copy button.
+- [ ] It shows on hover or focus, and is always visible on touch devices.
+
+**Source:** SPEC.md §2.3 CHAT-5"
+CHAT-13,CHAT-13 Pick any model from connected providers,Story,Chat,M4 · Chat: read & organize,Highest,5,To Do,chat providers component,PROV-1,ai-hub/implementation-specs/CHAT-13-model-picker/SPEC.md,"**As a** user **I want** one searchable model picker grouped by provider **so that** I can choose exactly which model answers.
+
+## Acceptance criteria
+- [ ] An `Autocomplete` grouped by provider (connected providers only).
+- [ ] Options come from `GET /providers/:id/models` for each connected provider.
+- [ ] Search matches model name or id.
+- [ ] If a provider's model request fails, it falls back to `suggestedModels` and shows a warning icon on that group.
+- [ ] The selected value shows the provider avatar and model name.
+- [ ] Reusable in Chat, Compare and Settings.
+
+**Source:** SPEC.md §2.3 CHAT-13, §7.6"
+CHAT-8,CHAT-8 Switch model mid-conversation,Story,Chat,M4 · Chat: read & organize,High,2,To Do,chat,CHAT-13 CHAT-14,ai-hub/implementation-specs/CHAT-8-switch-model/SPEC.md,"**As a** user **I want** to switch the model in the middle of a conversation **so that** I can get a second opinion without starting over.
+
+## Acceptance criteria
+- [ ] The chat header's model picker sends `PATCH /conversations/:id` `{ providerId, model }`.
+- [ ] The next message uses the new model; older messages keep their own model label.
+- [ ] The choice persists after a reload.
+
+**Source:** SPEC.md §2.3 CHAT-8, §6.3"
+CHAT-9,CHAT-9 Set a system prompt,Story,Chat,M4 · Chat: read & organize,Medium,2,To Do,chat,CHAT-8,ai-hub/implementation-specs/CHAT-9-system-prompt/SPEC.md,"**As a** user **I want** to give the model standing instructions for a conversation **so that** every reply follows them.
+
+## Acceptance criteria
+- [ ] A header button (icon `TuneRounded`) opens a dialog to edit the conversation's system prompt, saved with PATCH.
+- [ ] On a new chat, the system prompt is held locally and sent with `POST /conversations` (wired up in CHAT-1).
+- [ ] The button shows when a system prompt is active (for example a dot badge).
+
+**Source:** SPEC.md §2.3 CHAT-9, §9 Chat"
+CHAT-2,CHAT-2 Stream answers token by token,Story,Chat,M5 · Chat: send & stream,Highest,8,To Do,chat streaming,CHAT-14 AUTH-4,ai-hub/implementation-specs/CHAT-2-streaming-answers/SPEC.md,"**As a** user **I want** to see the answer appear as it's generated **so that** the chat feels fast and alive.
+
+## Acceptance criteria
+- [ ] Sending in an existing conversation uses `POST /conversations/:id/messages/stream` (SSE over `fetch`).
+- [ ] The user's message appears immediately (optimistic).
+- [ ] The assistant bubble shows a typing indicator (three animated dots) until the first delta, then the text grows token by token.
+- [ ] When the stream finishes, the final message (with footer) replaces the draft, the title updates, and the conversations list and usage refresh.
+- [ ] Pre-flight errors roll back the optimistic message and show an error; a 401 signs out.
+- [ ] The stream aborts on unmount or when the conversation changes.
+
+**Source:** SPEC.md §2.3 CHAT-2, §3.6, §7.3, §7.4"
+CHAT-10,CHAT-10 Write messages comfortably,Story,Chat,M5 · Chat: send & stream,High,2,To Do,chat composer,CHAT-2,ai-hub/implementation-specs/CHAT-10-composer-ux/SPEC.md,"**As a** user **I want** a composer that grows with my text and sends with Enter **so that** writing prompts is quick.
+
+## Acceptance criteria
+- [ ] A multiline, auto-growing input (max 8 rows).
+- [ ] **Enter** sends and **Shift+Enter** adds a new line. This is configurable via the `enterToSend` preference (when it's off: Ctrl/Cmd+Enter sends).
+- [ ] Send is disabled when the input is empty or while streaming.
+- [ ] The hint ""AI can make mistakes. Check important info."" shows below.
+- [ ] Focus returns to the composer after sending.
+
+**Source:** SPEC.md §2.3 CHAT-10, §5.6 a11y"
+CHAT-3,CHAT-3 Stop a generating answer,Story,Chat,M5 · Chat: send & stream,High,3,To Do,chat streaming,CHAT-10,ai-hub/implementation-specs/CHAT-3-stop-generation/SPEC.md,"**As a** user **I want** to stop an answer that's going the wrong way **so that** I don't waste time or tokens.
+
+## Acceptance criteria
+- [ ] While streaming, Send becomes a **Stop** button, and `Esc` also stops.
+- [ ] Stopping aborts the fetch. The partial answer stays and shows a ""Stopped"" chip.
+- [ ] After a reload the stopped message is still there with its chip (the server saved it).
+
+**Source:** SPEC.md §2.3 CHAT-3, §3.6, §7.4 step 5"
+CHAT-11,CHAT-11 Follow the answer while it streams,Story,Chat,M5 · Chat: send & stream,Medium,2,To Do,chat ux,CHAT-2,ai-hub/implementation-specs/CHAT-11-smart-autoscroll/SPEC.md,"**As a** user **I want** the view to follow a streaming answer unless I scroll up to read **so that** I neither miss text nor get yanked around.
+
+## Acceptance criteria
+- [ ] While streaming, the view stays pinned to the bottom unless the user has scrolled up more than 80 px.
+- [ ] When scrolled up, a floating ""↓ Jump to latest"" button appears and scrolls to the bottom.
+- [ ] Opening a conversation starts at the bottom.
+
+**Source:** SPEC.md §2.3 CHAT-11"
+CHAT-1,CHAT-1 Start a new chat with any model,Story,Chat,M5 · Chat: send & stream,Highest,5,To Do,chat streaming,CHAT-2 CHAT-9 CHAT-10,ai-hub/implementation-specs/CHAT-1-new-chat/SPEC.md,"**As a** user **I want** to pick a model and just start typing **so that** a new conversation is one message away.
+
+## Acceptance criteria
+- [ ] `/chat` shows a new-chat state: a large model picker, and 4 suggestion chips (""Explain a concept"", ""Write code"", ""Summarize text"", ""Brainstorm ideas"") that fill the composer.
+- [ ] The picker is pre-selected from the `defaultModel` preference, or else the first available model.
+- [ ] The system prompt button works locally and its value is sent with `POST /conversations`.
+- [ ] The **first** send creates the conversation, streams the answer, and replaces the URL with `/chat/:id` without interrupting the stream.
+- [ ] The sidebar shows the new conversation with its auto title.
+- [ ] `Ctrl/Cmd+K` opens a new chat.
+
+**Source:** SPEC.md §2.3 CHAT-1, §7.4 ""New chat flow"", §9 Chat"
+CHAT-6,CHAT-6 Recover from failed answers,Story,Chat,M5 · Chat: send & stream,High,3,To Do,chat errors,CHAT-2,ai-hub/implementation-specs/CHAT-6-recoverable-errors/SPEC.md,"**As a** user **I want** failed answers to explain what went wrong and let me retry **so that** one error doesn't derail my conversation.
+
+## Acceptance criteria
+- [ ] A message with `status: 'error'` renders as an error `Alert` in the thread with its `error` text and a **Retry** button.
+- [ ] Retry re-sends the preceding user message's content.
+- [ ] `CONNECTION_REQUIRED` (409) shows an alert with a ""Connect provider"" button that links to `/providers`.
+- [ ] Rate-limit (429) messages suggest waiting a moment.
+
+**Source:** SPEC.md §2.3 CHAT-6, §3.2 error table, §9 Chat"
+CHAT-12,CHAT-12 Guide me when no provider is connected,Story,Chat,M5 · Chat: send & stream,Medium,1,To Do,chat onboarding,CHAT-1,ai-hub/implementation-specs/CHAT-12-no-providers-state/SPEC.md,"**As a** user with no providers connected **I want** chat to tell me what to do **so that** I'm not stuck in front of a composer that can't work.
+
+## Acceptance criteria
+- [ ] If nothing is connected, `/chat` shows an empty state with a ""Connect a provider"" CTA instead of the composer.
+- [ ] Existing conversations can still be read; their composer shows the CHAT-6 connect alert when sending fails.
+
+**Source:** SPEC.md §2.3 CHAT-12"
+CMP-1,CMP-1 Set up a model comparison,Story,Compare,M6 · Compare,High,3,To Do,compare forms,CHAT-13,ai-hub/implementation-specs/CMP-1-compare-form/SPEC.md,"**As a** user **I want** to write one prompt and choose up to 4 models **so that** I can compare their answers.
+
+## Acceptance criteria
+- [ ] `/compare` has a prompt textarea, an optional system prompt (collapsible), and 1–4 target rows, each with a model picker.
+- [ ] ""+ Add model"" (hidden at 4) and per-row remove buttons (hidden at 1).
+- [ ] ""Run"" is disabled until there's a prompt and at least 1 target. `Ctrl/Cmd+Enter` runs.
+- [ ] With no connected providers, show the connect CTA instead.
+
+**Source:** SPEC.md §2.4 CMP-1"
+CMP-2,CMP-2 See each model's answer as soon as it's ready,Story,Compare,M6 · Compare,High,3,To Do,compare data,CMP-1 CHAT-4,ai-hub/implementation-specs/CMP-2-parallel-results/SPEC.md,"**As a** user **I want** each model's answer to appear as soon as that model finishes **so that** a slow model doesn't hold up the others.
+
+## Acceptance criteria
+- [ ] **One** `POST /compare` request **per target** (`targets: [t]`), all sent in parallel.
+- [ ] Each card shows a skeleton while loading, then Markdown content, latency, tokens and a Copy button, or an error `Alert`.
+- [ ] Running again replaces the previous results. Usage is invalidated after each run.
+
+**Source:** SPEC.md §2.4 CMP-2, §5.5"
+CMP-3,CMP-3 Compare answers side by side,Story,Compare,M6 · Compare,Medium,1,To Do,compare responsive,CMP-2,ai-hub/implementation-specs/CMP-3-results-layout/SPEC.md,"**As a** user **I want** answers in a tidy grid **so that** I can scan them side by side.
+
+## Acceptance criteria
+- [ ] The cards sit in a responsive grid: 1 column on xs, 2 on md, up to 4 on xl.
+- [ ] Every card in a row has the same height and scrolls internally.
+
+**Source:** SPEC.md §2.4 CMP-3"
+DASH-1,DASH-1 See my usage at a glance,Story,Dashboard,M7 · Dashboard & settings,High,3,To Do,dashboard data,PROV-1 FND-5,ai-hub/implementation-specs/DASH-1-overview-stats/SPEC.md,"**As a** user **I want** a greeting and the key numbers on the home page **so that** I know how much I've been using AI.
+
+## Acceptance criteria
+- [ ] `/` shows a greeting (""Good morning, Ada"").
+- [ ] 4 stat cards: **Connected providers** (x / total), **Requests**, **Input tokens** and **Output tokens** for the selected range.
+- [ ] Large numbers are formatted as `12.4k` or `1.2M`.
+- [ ] A range selector (7 / 14 / 30 days) drives the numbers. Its state is shared with the chart (DASH-2).
+- [ ] Skeletons while loading, an error state with Retry.
+
+**Source:** SPEC.md §2.5 DASH-1"
+DASH-2,DASH-2 See usage over time,Story,Dashboard,M7 · Dashboard & settings,Medium,3,To Do,dashboard charts,DASH-1,ai-hub/implementation-specs/DASH-2-usage-chart/SPEC.md,"**As a** user **I want** a daily chart of my activity **so that** I can spot trends.
+
+## Acceptance criteria
+- [ ] A bar chart of daily requests, or tokens via a toggle, from `GET /usage?days=`.
+- [ ] It follows the 7 / 14 / 30 day range selector.
+- [ ] Built with `@mui/x-charts`, readable in both themes, responsive.
+
+**Source:** SPEC.md §2.5 DASH-2"
+DASH-3,DASH-3 See usage by provider and model,Story,Dashboard,M7 · Dashboard & settings,Medium,2,To Do,dashboard,DASH-1,ai-hub/implementation-specs/DASH-3-usage-breakdown/SPEC.md,"**As a** user **I want** to see which providers and models I use most **so that** I understand where my tokens go.
+
+## Acceptance criteria
+- [ ] ""By provider"": a list with progress bars in provider colors.
+- [ ] ""Top models"": a table with model, provider, requests, and input/output tokens.
+- [ ] Empty states when there's no usage in the range.
+
+**Source:** SPEC.md §2.5 DASH-3"
+DASH-4,DASH-4 Jump back into recent conversations,Story,Dashboard,M7 · Dashboard & settings,Medium,1,To Do,dashboard chat,DASH-1 CHAT-7,ai-hub/implementation-specs/DASH-4-recent-conversations/SPEC.md,"**As a** user **I want** my latest conversations on the home page **so that** I can continue them in one click.
+
+## Acceptance criteria
+- [ ] The 5 most recent conversations, each linking to `/chat/:id`.
+- [ ] A ""Start new chat"" button.
+- [ ] An empty state when there are none.
+
+**Source:** SPEC.md §2.5 DASH-4"
+DASH-5,DASH-5 Get started with my first provider,Story,Dashboard,M7 · Dashboard & settings,Medium,1,To Do,dashboard onboarding,DASH-1,ai-hub/implementation-specs/DASH-5-onboarding/SPEC.md,"**As a** new user **I want** the home page to show me the first step **so that** I can get going quickly.
+
+## Acceptance criteria
+- [ ] With 0 connections, a prominent ""Connect your first AI provider"" card replaces the charts and links to `/providers`.
+- [ ] It mentions the free Mock AI option.
+
+**Source:** SPEC.md §2.5 DASH-5, §9 Dashboard"
+SET-1,SET-1 Edit my profile name,Story,Settings,M7 · Dashboard & settings,Medium,2,To Do,settings forms,AUTH-3,ai-hub/implementation-specs/SET-1-profile/SPEC.md,"**As a** user **I want** to change my display name **so that** the app greets me correctly.
+
+## Acceptance criteria
+- [ ] The Settings page has a Profile section: an editable name (`PATCH /auth/me`) and a read-only email.
+- [ ] Saving shows a spinner and a snackbar; the user menu updates immediately.
+
+**Source:** SPEC.md §2.6 SET-1, §9"
+SET-2,"SET-2 Choose light, dark or system theme",Story,Settings,M7 · Dashboard & settings,Low,1,To Do,settings theme,SET-1 FND-2,ai-hub/implementation-specs/SET-2-appearance/SPEC.md,"**As a** user **I want** to choose the theme in Settings **so that** the app is comfortable to look at.
+
+## Acceptance criteria
+- [ ] An Appearance section with Light / Dark / System in a `ToggleButtonGroup`.
+- [ ] Applied instantly, persisted, and kept in sync with the user menu's theme options.
+
+**Source:** SPEC.md §2.6 SET-2"
+SET-3,SET-3 Set my chat defaults,Story,Settings,M7 · Dashboard & settings,Low,2,To Do,settings chat,SET-1 CHAT-1 CHAT-10,ai-hub/implementation-specs/SET-3-chat-defaults/SPEC.md,"**As a** user **I want** to pick my default model and how Enter behaves **so that** every new chat starts the way I like.
+
+## Acceptance criteria
+- [ ] A default model picker, used to pre-select the picker on new chats and in Compare.
+- [ ] An ""Enter to send"" switch.
+- [ ] Both are stored locally and persist after a reload.
+
+**Source:** SPEC.md §2.6 SET-3"
+SET-4,SET-4 Sign out from Settings,Story,Settings,M7 · Dashboard & settings,Low,1,To Do,settings auth,SET-1 AUTH-5,ai-hub/implementation-specs/SET-4-settings-sign-out/SPEC.md,"**As a** user **I want** a sign-out button on the Settings page **so that** I can find it where I expect.
+
+## Acceptance criteria
+- [ ] A ""Sign out"" button at the bottom of the Settings page, with the same behavior as the user menu (AUTH-5).
+
+**Source:** SPEC.md §2.6 SET-4"
+QA-1,"QA-1 Polish states, responsiveness and keyboard support",Task,Quality,M8 · Quality & release,Medium,3,To Do,quality a11y responsive,CHAT-12 CMP-3 DASH-5 SET-4 PROV-6,ai-hub/implementation-specs/QA-1-polish-audit/SPEC.md,"**As a** user **I want** every screen to handle loading, empty and error cases and to work on any device and from the keyboard **so that** the app feels finished.
+
+## Acceptance criteria
+- [ ] Every page has loading, empty and error states (SPEC.md §5.6).
+- [ ] Every page works at 360, 768 and 1440 px in both themes, with no horizontal page scroll.
+- [ ] `useDocumentTitle` on every page (""Chat · AI Hub"" or the conversation title).
+- [ ] Shortcuts: `Ctrl/Cmd+K` new chat, `Esc` stop, `Ctrl/Cmd+Enter` compare. Focus returns to the composer after sending.
+- [ ] Every destructive action uses `ConfirmDialog`.
+
+**Source:** SPEC.md §5.6, §6.5, §8 Phase 9"
+QA-2,QA-2 Add automated tests for critical logic,Task,Quality,M8 · Quality & release,Medium,3,To Do,quality tests,CHAT-2 AUTH-2 PROV-1 FND-5,ai-hub/implementation-specs/QA-2-automated-tests/SPEC.md,"**As a** developer **I want** tests for the riskiest logic **so that** future changes don't silently break it.
+
+## Acceptance criteria
+- [ ] Vitest + RTL tests for `format.ts`, `errors.ts`, the SSE parser (including an event split across chunks), `LoginPage` validation and `ProviderCard` states.
+- [ ] `yarn test` passes with zero warnings.
+
+**Source:** SPEC.md §8 Phase 9"
+QA-3,QA-3 Pass the release checklist,Task,Quality,M8 · Quality & release,Medium,2,To Do,quality security docs,QA-1 QA-2,ai-hub/implementation-specs/QA-3-release-readiness/SPEC.md,"**As a** team **we want** the full QA checklist, the security checks and performance verified, and a client README written, **so that** v1 is ready to ship.
+
+## Acceptance criteria
+- [ ] Every item in SPEC.md §9 passes in both themes, on desktop and at 360 px.
+- [ ] Security: no raw API key in localStorage, the query cache or the console; raw HTML in replies is not executed.
+- [ ] Performance: finished messages don't re-render while streaming; route chunks are lazy.
+- [ ] `client/README.md` covers setup, scripts and structure.
+- [ ] `yarn lint`, `yarn test` and `yarn build` all succeed with zero warnings.
+
+**Source:** SPEC.md §8 Phase 9, §9"
