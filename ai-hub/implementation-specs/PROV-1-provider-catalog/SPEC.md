@@ -1,6 +1,6 @@
 # PROV-1 · See every supported provider: implementation spec
 
-> **Story card:** [stories/PROV-1-provider-catalog.md](../../stories/PROV-1-provider-catalog.md) · **Depends on:** AUTH-3, FND-5 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md)
+> **Story card:** [stories/PROV-1-provider-catalog.md](../../stories/PROV-1-provider-catalog.md) · **Depends on:** AUTH-1, FND-5 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md)
 
 ## Goal
 `/providers` lists every provider with its live connection status. This story also creates the data layer the other PROV stories extend.

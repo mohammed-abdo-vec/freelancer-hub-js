@@ -6,7 +6,7 @@ type: Story
 priority: Highest
 points: 5
 status: To Do
-depends_on: [AUTH-3, FND-5]
+depends_on: [AUTH-1, FND-5]
 labels: [chat, sidebar]
 spec: ../implementation-specs/CHAT-7-conversation-list/SPEC.md
 ---

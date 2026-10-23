@@ -29,7 +29,7 @@ App-wide providers exist, so any feature can `useQuery`, `useMutation` and `enqu
    });
    ```
    `getStatus` reads `err.response.status` when `axios.isAxiosError(err)`, otherwise `undefined`. Keep it local to this file, because `errors.ts` arrives in FND-4.
-   The singleton is exported so that sign-out (AUTH-5) can call `queryClient.clear()`.
+   The singleton is exported so that sign-out (AUTH-1) can call `queryClient.clear()`.
 2. `queryKeys.ts`: copy SPEC.md §5.5 verbatim, typed with `ProviderId` from `@/shared/types/api`.
 3. `App.tsx` order (outer → inner): `AppThemeProvider` → `QueryClientProvider` → `SnackbarProvider` (`maxSnack={3}`, `anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}`, `autoHideDuration={4000}`) → `RouterProvider`. Add `ReactQueryDevtools` only when `import.meta.env.DEV`.
 4. If notistack's default colors clash with the theme, pass `Components` or `sx` overrides that use theme tokens. Don't use hex.

@@ -1,6 +1,6 @@
 # SET-1 · Edit my profile name: implementation spec
 
-> **Story card:** [stories/SET-1-profile.md](../../stories/SET-1-profile.md) · **Depends on:** AUTH-3 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md)
+> **Story card:** [stories/SET-1-profile.md](../../stories/SET-1-profile.md) · **Depends on:** AUTH-1 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md)
 
 ## Current state
 `src/features/settings/pages/SettingsPage.tsx` is a `PagePlaceholder`. Replace it with a sectioned page; SET-2 to SET-4 add more sections.

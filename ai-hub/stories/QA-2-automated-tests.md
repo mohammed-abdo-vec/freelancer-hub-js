@@ -6,7 +6,7 @@ type: Task
 priority: Medium
 points: 3
 status: To Do
-depends_on: [CHAT-2, AUTH-2, PROV-1, FND-5]
+depends_on: [CHAT-2, AUTH-1, PROV-1, FND-5]
 labels: [quality, tests]
 spec: ../implementation-specs/QA-2-automated-tests/SPEC.md
 ---

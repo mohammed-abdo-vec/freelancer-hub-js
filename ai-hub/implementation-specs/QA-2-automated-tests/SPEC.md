@@ -1,6 +1,6 @@
 # QA-2 · Add automated tests for critical logic: implementation spec
 
-> **Story card:** [stories/QA-2-automated-tests.md](../../stories/QA-2-automated-tests.md) · **Depends on:** CHAT-2, AUTH-2, PROV-1, FND-5 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md)
+> **Story card:** [stories/QA-2-automated-tests.md](../../stories/QA-2-automated-tests.md) · **Depends on:** CHAT-2, AUTH-1, PROV-1, FND-5 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md)
 
 ## Files
 | Action | Path | What |

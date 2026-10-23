@@ -22,6 +22,6 @@ spec: ../implementation-specs/FND-4-api-client-and-session/SPEC.md
 - [ ] A persisted `auth.store` (key `ai-hub-auth`) has `token`, `user`, `setSession()` and `clearSession()`.
 
 ## Out of scope
-- Login and register UI (AUTH-1, AUTH-2). Redirects on 401 (AUTH-4, AUTH-6).
+- Login and register UI, and redirects on 401 (AUTH-1).
 
 **Source:** SPEC.md §3.2, §7.1, §7.2

@@ -4,7 +4,7 @@
 
 One file per story, ready to copy into Jira, Trello, Linear or GitHub Projects. Each card links to its AI-ready handover in [`../implementation-specs/`](../implementation-specs/).
 
-**46 stories · 112 points · 0 done.** Build top to bottom: every story only depends on stories above it.
+**41 stories · 114 points · 0 done.** Build top to bottom: every story only depends on stories above it.
 
 | Field | Meaning |
 |---|---|
@@ -26,22 +26,17 @@ One file per story, ready to copy into Jira, Trello, Linear or GitHub Projects. 
 | [FND-4](FND-4-api-client-and-session.md) | Add API client, error helpers and session store | Task | Highest | 3 | FND-1, FND-3 | To Do |
 | [FND-5](FND-5-shared-ui-kit.md) | Build the shared UI kit and format helpers | Task | High | 3 | FND-1, FND-2 | To Do |
 
-## M2 · Authentication (11 pts)
+## M2 · Authentication (13 pts)
 
 | ID | Story | Type | Priority | Pts | Depends on | Status |
 |---|---|---|---|---|---|---|
-| [AUTH-1](AUTH-1-register.md) | Create an account | Story | Highest | 3 | FND-4, FND-5 | To Do |
-| [AUTH-2](AUTH-2-sign-in.md) | Sign in | Story | Highest | 2 | AUTH-1 | To Do |
-| [AUTH-6](AUTH-6-route-guards.md) | Protect private routes | Story | Highest | 2 | AUTH-2 | To Do |
-| [AUTH-3](AUTH-3-session-persistence.md) | Keep me signed in across reloads | Story | High | 2 | AUTH-6 | To Do |
-| [AUTH-4](AUTH-4-expired-session.md) | Handle expired sessions | Story | High | 1 | AUTH-3 | To Do |
-| [AUTH-5](AUTH-5-sign-out.md) | Sign out | Story | High | 1 | AUTH-3 | To Do |
+| [AUTH-1](AUTH-1-authentication.md) | Sign up, sign in and stay signed in | Story | Highest | 13 | FND-4, FND-5 | In Progress |
 
 ## M3 · Providers (12 pts)
 
 | ID | Story | Type | Priority | Pts | Depends on | Status |
 |---|---|---|---|---|---|---|
-| [PROV-1](PROV-1-provider-catalog.md) | See every supported provider | Story | Highest | 3 | AUTH-3, FND-5 | To Do |
+| [PROV-1](PROV-1-provider-catalog.md) | See every supported provider | Story | Highest | 3 | AUTH-1, FND-5 | To Do |
 | [PROV-2](PROV-2-connect-provider.md) | Connect a provider with an API key | Story | Highest | 3 | PROV-1 | To Do |
 | [PROV-3](PROV-3-test-connection.md) | Test a connection | Story | High | 2 | PROV-2 | To Do |
 | [PROV-4](PROV-4-edit-connection.md) | Replace a key or rename a connection | Story | Medium | 2 | PROV-2 | To Do |
@@ -52,7 +47,7 @@ One file per story, ready to copy into Jira, Trello, Linear or GitHub Projects. 
 
 | ID | Story | Type | Priority | Pts | Depends on | Status |
 |---|---|---|---|---|---|---|
-| [CHAT-7](CHAT-7-conversation-list.md) | Browse, search and manage conversations | Story | Highest | 5 | AUTH-3, FND-5 | To Do |
+| [CHAT-7](CHAT-7-conversation-list.md) | Browse, search and manage conversations | Story | Highest | 5 | AUTH-1, FND-5 | To Do |
 | [CHAT-14](CHAT-14-read-conversation.md) | Open and read a conversation | Story | Highest | 3 | CHAT-7 | To Do |
 | [CHAT-4](CHAT-4-rich-rendering.md) | Render Markdown and code in answers | Story | High | 3 | CHAT-14 | To Do |
 | [CHAT-5](CHAT-5-message-metadata.md) | Show model, tokens and latency per answer | Story | Medium | 2 | CHAT-14 | To Do |
@@ -64,7 +59,7 @@ One file per story, ready to copy into Jira, Trello, Linear or GitHub Projects. 
 
 | ID | Story | Type | Priority | Pts | Depends on | Status |
 |---|---|---|---|---|---|---|
-| [CHAT-2](CHAT-2-streaming-answers.md) | Stream answers token by token | Story | Highest | 8 | CHAT-14, AUTH-4 | To Do |
+| [CHAT-2](CHAT-2-streaming-answers.md) | Stream answers token by token | Story | Highest | 8 | CHAT-14, AUTH-1 | To Do |
 | [CHAT-10](CHAT-10-composer-ux.md) | Write messages comfortably | Story | High | 2 | CHAT-2 | To Do |
 | [CHAT-3](CHAT-3-stop-generation.md) | Stop a generating answer | Story | High | 3 | CHAT-10 | To Do |
 | [CHAT-11](CHAT-11-smart-autoscroll.md) | Follow the answer while it streams | Story | Medium | 2 | CHAT-2 | To Do |
@@ -89,15 +84,15 @@ One file per story, ready to copy into Jira, Trello, Linear or GitHub Projects. 
 | [DASH-3](DASH-3-usage-breakdown.md) | See usage by provider and model | Story | Medium | 2 | DASH-1 | To Do |
 | [DASH-4](DASH-4-recent-conversations.md) | Jump back into recent conversations | Story | Medium | 1 | DASH-1, CHAT-7 | To Do |
 | [DASH-5](DASH-5-onboarding.md) | Get started with my first provider | Story | Medium | 1 | DASH-1 | To Do |
-| [SET-1](SET-1-profile.md) | Edit my profile name | Story | Medium | 2 | AUTH-3 | To Do |
+| [SET-1](SET-1-profile.md) | Edit my profile name | Story | Medium | 2 | AUTH-1 | To Do |
 | [SET-2](SET-2-appearance.md) | Choose light, dark or system theme | Story | Low | 1 | SET-1, FND-2 | To Do |
 | [SET-3](SET-3-chat-defaults.md) | Set my chat defaults | Story | Low | 2 | SET-1, CHAT-1, CHAT-10 | To Do |
-| [SET-4](SET-4-settings-sign-out.md) | Sign out from Settings | Story | Low | 1 | SET-1, AUTH-5 | To Do |
+| [SET-4](SET-4-settings-sign-out.md) | Sign out from Settings | Story | Low | 1 | SET-1, AUTH-1 | To Do |
 
 ## M8 · Quality & release (8 pts)
 
 | ID | Story | Type | Priority | Pts | Depends on | Status |
 |---|---|---|---|---|---|---|
 | [QA-1](QA-1-polish-audit.md) | Polish states, responsiveness and keyboard support | Task | Medium | 3 | CHAT-12, CMP-3, DASH-5, SET-4, PROV-6 | To Do |
-| [QA-2](QA-2-automated-tests.md) | Add automated tests for critical logic | Task | Medium | 3 | CHAT-2, AUTH-2, PROV-1, FND-5 | To Do |
+| [QA-2](QA-2-automated-tests.md) | Add automated tests for critical logic | Task | Medium | 3 | CHAT-2, AUTH-1, PROV-1, FND-5 | To Do |
 | [QA-3](QA-3-release-readiness.md) | Pass the release checklist | Task | Medium | 2 | QA-1, QA-2 | To Do |

@@ -1,6 +1,6 @@
 # CHAT-2 · Stream answers token by token: implementation spec
 
-> **Story card:** [stories/CHAT-2-streaming-answers.md](../../stories/CHAT-2-streaming-answers.md) · **Depends on:** CHAT-14, AUTH-4 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md), then **SPEC.md §3.6, §7.3 and §7.4 in full**
+> **Story card:** [stories/CHAT-2-streaming-answers.md](../../stories/CHAT-2-streaming-answers.md) · **Depends on:** CHAT-14, AUTH-1 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md), then **SPEC.md §3.6, §7.3 and §7.4 in full**
 
 ## Goal
 The core chat loop: send, stream and finish in an existing conversation. Stop (CHAT-3), auto-scroll (CHAT-11), new chats (CHAT-1) and retry (CHAT-6) build on this.
@@ -26,7 +26,7 @@ The core chat loop: send, stream and finish in an existing conversation. Stop (C
 | modify | `src/features/chat/pages/ChatPage.tsx` | wire `useChatStream` → `Composer onSend` |
 
 ## Steps
-1. **`stream.ts`**: follow §7.3, but put the block parsing in `parseSSE` so it can be tested with chunked input (an event split across two chunks must work). Use `API_URL` from `@/shared/api/client` and the token from `useAuthStore.getState()`. On `!res.ok`: parse the JSON as `ApiError`, call `handleUnauthorized()` (AUTH-4) if the status is 401, then throw `StreamHttpError`. Make `getApiError` and `getErrorStatus` (FND-4) understand `StreamHttpError`. Type the `data` payloads with `ChatStreamEvent` from the API types and narrow them; no `any`.
+1. **`stream.ts`**: follow §7.3, but put the block parsing in `parseSSE` so it can be tested with chunked input (an event split across two chunks must work). Use `API_URL` from `@/shared/api/client` and the token from `useAuthStore.getState()`. On `!res.ok`: parse the JSON as `ApiError`, call `handleUnauthorized()` (AUTH-1) if the status is 401, then throw `StreamHttpError`. Make `getApiError` and `getErrorStatus` (FND-4) understand `StreamHttpError`. Type the `data` payloads with `ChatStreamEvent` from the API types and narrow them; no `any`.
 2. **`useChatStream(conversationId)`** returns `{ send(content), stop(), status: 'idle' | 'streaming', draft, error }`:
    1. `send`: create an `AbortController` (kept in a ref) and set `status = 'streaming'`, `draft = ''`. Optimistically append `{ id: 'temp-' + crypto.randomUUID(), role: 'user', content, status: 'complete', … }` to `['conversation', id]` via `setQueryData`.
    2. `onUserMessage`: replace the temp message with the real one.

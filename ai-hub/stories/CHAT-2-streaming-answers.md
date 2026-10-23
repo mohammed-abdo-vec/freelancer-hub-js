@@ -6,7 +6,7 @@ type: Story
 priority: Highest
 points: 8
 status: To Do
-depends_on: [CHAT-14, AUTH-4]
+depends_on: [CHAT-14, AUTH-1]
 labels: [chat, streaming]
 spec: ../implementation-specs/CHAT-2-streaming-answers/SPEC.md
 ---

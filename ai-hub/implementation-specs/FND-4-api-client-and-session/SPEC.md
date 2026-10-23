@@ -23,7 +23,7 @@ The shared plumbing every feature uses to call the API.
      token: string | null;
      user: User | null;
      setSession(token: string, user: User): void;
-     setUser(user: User): void;          // used by AUTH-3 and SET-1
+     setUser(user: User): void;          // used by AUTH-1 and SET-1
      clearSession(): void;
    }
    ```
@@ -52,4 +52,4 @@ The shared plumbing every feature uses to call the API.
 In the browser console (temporarily expose `api` on `window` in dev, then remove it): `api.get('/auth/me')` with a fake token gives one snackbar and the store is cleared. `yarn lint && yarn build`. Unit tests for `errors.ts` come in QA-2.
 
 ## Out of scope
-- Redirecting to `/login` (AUTH-4/AUTH-6). Auth API functions (AUTH-1/2).
+- Redirecting to `/login` and the auth API functions (AUTH-1).

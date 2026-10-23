@@ -1,6 +1,6 @@
 # SET-4 · Sign out from Settings: implementation spec
 
-> **Story card:** [stories/SET-4-settings-sign-out.md](../../stories/SET-4-settings-sign-out.md) · **Depends on:** SET-1, AUTH-5 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md)
+> **Story card:** [stories/SET-4-settings-sign-out.md](../../stories/SET-4-settings-sign-out.md) · **Depends on:** SET-1, AUTH-1 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md)
 
 ## Files
 | Action | Path | What |

@@ -1,6 +1,6 @@
 # CHAT-7 · Browse, search and manage conversations: implementation spec
 
-> **Story card:** [stories/CHAT-7-conversation-list.md](../../stories/CHAT-7-conversation-list.md) · **Depends on:** AUTH-3, FND-5 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md)
+> **Story card:** [stories/CHAT-7-conversation-list.md](../../stories/CHAT-7-conversation-list.md) · **Depends on:** AUTH-1, FND-5 · **Read first:** [CONVENTIONS.md](../CONVENTIONS.md)
 
 ## Goal
 Replace the mock history in the main sidebar with real, manageable conversations.

@@ -23,7 +23,7 @@ api.interceptors.response.use(undefined, (error: unknown) => {
       setTimeout(() => {
         handlingExpiredSession = false;
       }, 2000);
-      // TODO(AUTH-4): redirect to /login (RequireAuth handles it once AUTH-6 lands)
+      // TODO(AUTH-1): move into handleUnauthorized(); RequireAuth does the redirect to /login
       useAuthStore.getState().clearSession();
       enqueueSnackbar('Session expired, please sign in again', {
         variant: 'warning',

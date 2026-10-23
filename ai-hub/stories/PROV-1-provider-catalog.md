@@ -6,7 +6,7 @@ type: Story
 priority: Highest
 points: 3
 status: To Do
-depends_on: [AUTH-3, FND-5]
+depends_on: [AUTH-1, FND-5]
 labels: [providers, ui]
 spec: ../implementation-specs/PROV-1-provider-catalog/SPEC.md
 ---

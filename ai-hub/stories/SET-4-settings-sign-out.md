@@ -6,7 +6,7 @@ type: Story
 priority: Low
 points: 1
 status: To Do
-depends_on: [SET-1, AUTH-5]
+depends_on: [SET-1, AUTH-1]
 labels: [settings, auth]
 spec: ../implementation-specs/SET-4-settings-sign-out/SPEC.md
 ---
@@ -16,6 +16,6 @@ spec: ../implementation-specs/SET-4-settings-sign-out/SPEC.md
 **As a** user **I want** a sign-out button on the Settings page **so that** I can find it where I expect.
 
 ## Acceptance criteria
-- [ ] A "Sign out" button at the bottom of the Settings page, with the same behavior as the user menu (AUTH-5).
+- [ ] A "Sign out" button at the bottom of the Settings page, with the same behavior as the user menu (AUTH-1).
 
 **Source:** SPEC.md §2.6 SET-4

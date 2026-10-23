@@ -1,7 +1,7 @@
 import { QueryClient } from '@tanstack/react-query';
 import { getErrorStatus } from './errors';
 
-/** Exported so sign-out (AUTH-5) can call `queryClient.clear()`. */
+/** Exported so sign-out (AUTH-1) can call `queryClient.clear()`. */
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {

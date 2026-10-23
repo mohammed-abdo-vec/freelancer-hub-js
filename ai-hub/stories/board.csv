@@ -46,7 +46,7 @@ FND-4,"FND-4 Add API client, error helpers and session store",Task,Foundation,M1
 - [ ] A persisted `auth.store` (key `ai-hub-auth`) has `token`, `user`, `setSession()` and `clearSession()`.
 
 ## Out of scope
-- Login and register UI (AUTH-1, AUTH-2). Redirects on 401 (AUTH-4, AUTH-6).
+- Login and register UI, and redirects on 401 (AUTH-1).
 
 **Source:** SPEC.md §3.2, §7.1, §7.2"
 FND-5,FND-5 Build the shared UI kit and format helpers,Task,Foundation,M1 · Foundation,High,3,To Do,foundation ui,FND-1 FND-2,ai-hub/implementation-specs/FND-5-shared-ui-kit/SPEC.md,"**As a** developer **I want** shared empty, error, confirm and avatar components plus number and time formatters **so that** every page handles states the same way.
@@ -60,58 +60,45 @@ FND-5,FND-5 Build the shared UI kit and format helpers,Task,Foundation,M1 · Fou
 - Feature-specific components (StatusChip, ModelPicker, Markdown).
 
 **Source:** SPEC.md §5.2 components/common, §5.6, §8 Phase 2"
-AUTH-1,AUTH-1 Create an account,Story,Authentication,M2 · Authentication,Highest,3,To Do,auth forms,FND-4 FND-5,ai-hub/implementation-specs/AUTH-1-register/SPEC.md,"**As a** visitor **I want** to create an account **so that** I can save my provider keys and conversations.
+AUTH-1,"AUTH-1 Sign up, sign in and stay signed in",Story,Authentication,M2 · Authentication,Highest,13,In Progress,auth forms routing,FND-4 FND-5,ai-hub/implementation-specs/AUTH-1-authentication/SPEC.md,"**As a** user **I want** to create an account, sign in, stay signed in across reloads and sign out **so that** my provider keys and conversations are mine alone and I always land in the right place.
 
 ## Acceptance criteria
+
+### Create an account
 - [ ] The form has name, email and password (min 8 chars), validated client side with zod.
 - [ ] Server validation errors (`details[]`) show under the matching field.
 - [ ] A 409 shows ""An account with this email already exists"" under email.
 - [ ] On success the token is stored and the user goes to `/`.
 - [ ] There's a link to the sign-in page.
 
-**Source:** SPEC.md §2.1 AUTH-1, §9 Auth"
-AUTH-2,AUTH-2 Sign in,Story,Authentication,M2 · Authentication,Highest,2,To Do,auth forms,AUTH-1,ai-hub/implementation-specs/AUTH-2-sign-in/SPEC.md,"**As a** user **I want** to sign in with my email and password **so that** I can get back to my workspace.
-
-## Acceptance criteria
+### Sign in
 - [ ] The form has email and password.
 - [ ] A 401 shows the server message in an `Alert` above the form.
-- [ ] On success, redirect to the `?redirect=` path, or `/`.
+- [ ] On success, redirect to the `?redirect=` path, or `/`. External redirects (`https://…`, `//…`) go to `/`.
 
-**Source:** SPEC.md §2.1 AUTH-2, §9 Auth"
-AUTH-6,AUTH-6 Protect private routes,Story,Authentication,M2 · Authentication,Highest,2,To Do,auth routing,AUTH-2,ai-hub/implementation-specs/AUTH-6-route-guards/SPEC.md,"**As a** user **I want** private pages to need a session, and the sign-in pages to skip when I'm already signed in, **so that** I always land in the right place.
-
-## Acceptance criteria
+### Protect private routes
 - [ ] Signed-out users who visit a private route go to `/login?redirect=<path>`.
 - [ ] Signed-in users who visit `/login` or `/register` go to `/`.
 - [ ] The 404 page needs no session.
 
-**Source:** SPEC.md §2.1 AUTH-6, §5.4"
-AUTH-3,AUTH-3 Keep me signed in across reloads,Story,Authentication,M2 · Authentication,High,2,To Do,auth,AUTH-6,ai-hub/implementation-specs/AUTH-3-session-persistence/SPEC.md,"**As a** user **I want** my session to survive a page reload **so that** I don't have to sign in again.
-
-## Acceptance criteria
+### Stay signed in
 - [ ] The token and user are persisted.
 - [ ] On app start with a token, `GET /auth/me` runs behind a full-screen loader.
 - [ ] A 401 from that call clears the session.
 - [ ] The user menu shows the real name, email and initials.
 
-**Source:** SPEC.md §2.1 AUTH-3, §8 Phase 3"
-AUTH-4,AUTH-4 Handle expired sessions,Story,Authentication,M2 · Authentication,High,1,To Do,auth,AUTH-3,ai-hub/implementation-specs/AUTH-4-expired-session/SPEC.md,"**As a** user **I want** to be told when my session expires and sent back to where I was after signing in **so that** I don't lose my place.
-
-## Acceptance criteria
-- [ ] **Any** 401 from any API call (except login) clears the session.
+### Expired session
+- [ ] **Any** 401 from any API call (except login) clears the session and the query cache.
 - [ ] The user is redirected to `/login?redirect=<current path>`.
 - [ ] A snackbar says ""Session expired"", shown once.
 - [ ] After signing in, the user returns to that path.
 
-**Source:** SPEC.md §2.1 AUTH-4, §9 Auth"
-AUTH-5,AUTH-5 Sign out,Story,Authentication,M2 · Authentication,High,1,To Do,auth,AUTH-3,ai-hub/implementation-specs/AUTH-5-sign-out/SPEC.md,"**As a** user **I want** to sign out **so that** nobody else using this browser can see my data.
-
-## Acceptance criteria
+### Sign out
 - [ ] ""Sign out"" in the user menu clears the session and the **whole query cache**, then goes to `/login`.
 - [ ] A reusable `useSignOut()` hook is exported for Settings (SET-4).
 
-**Source:** SPEC.md §2.1 AUTH-5"
-PROV-1,PROV-1 See every supported provider,Story,Providers,M3 · Providers,Highest,3,To Do,providers ui,AUTH-3 FND-5,ai-hub/implementation-specs/PROV-1-provider-catalog/SPEC.md,"**As a** user **I want** to see every provider AI Hub supports and its connection status **so that** I know what I can connect.
+**Source:** SPEC.md §2.1 AUTH-1 to AUTH-6, §5.4, §9 Auth"
+PROV-1,PROV-1 See every supported provider,Story,Providers,M3 · Providers,Highest,3,To Do,providers ui,AUTH-1 FND-5,ai-hub/implementation-specs/PROV-1-provider-catalog/SPEC.md,"**As a** user **I want** to see every provider AI Hub supports and its connection status **so that** I know what I can connect.
 
 ## Acceptance criteria
 - [ ] A card grid from `GET /providers` (xs 1, sm 2, lg 3 columns).
@@ -161,7 +148,7 @@ PROV-6,PROV-6 Point new users to the free Mock AI provider,Story,Providers,M3 ·
 - [ ] Dismissing it is remembered across reloads.
 
 **Source:** SPEC.md §2.2 PROV-6"
-CHAT-7,"CHAT-7 Browse, search and manage conversations",Story,Chat,M4 · Chat: read & organize,Highest,5,To Do,chat sidebar,AUTH-3 FND-5,ai-hub/implementation-specs/CHAT-7-conversation-list/SPEC.md,"**As a** user **I want** my conversation history in the sidebar, with search, pinning, renaming and deleting, **so that** I can find and organize past chats.
+CHAT-7,"CHAT-7 Browse, search and manage conversations",Story,Chat,M4 · Chat: read & organize,Highest,5,To Do,chat sidebar,AUTH-1 FND-5,ai-hub/implementation-specs/CHAT-7-conversation-list/SPEC.md,"**As a** user **I want** my conversation history in the sidebar, with search, pinning, renaming and deleting, **so that** I can find and organize past chats.
 
 ## Acceptance criteria
 - [ ] The sidebar lists real conversations: a **Pinned** section, then the rest by recent activity.
@@ -227,7 +214,7 @@ CHAT-9,CHAT-9 Set a system prompt,Story,Chat,M4 · Chat: read & organize,Medium,
 - [ ] The button shows when a system prompt is active (for example a dot badge).
 
 **Source:** SPEC.md §2.3 CHAT-9, §9 Chat"
-CHAT-2,CHAT-2 Stream answers token by token,Story,Chat,M5 · Chat: send & stream,Highest,8,To Do,chat streaming,CHAT-14 AUTH-4,ai-hub/implementation-specs/CHAT-2-streaming-answers/SPEC.md,"**As a** user **I want** to see the answer appear as it's generated **so that** the chat feels fast and alive.
+CHAT-2,CHAT-2 Stream answers token by token,Story,Chat,M5 · Chat: send & stream,Highest,8,To Do,chat streaming,CHAT-14 AUTH-1,ai-hub/implementation-specs/CHAT-2-streaming-answers/SPEC.md,"**As a** user **I want** to see the answer appear as it's generated **so that** the chat feels fast and alive.
 
 ## Acceptance criteria
 - [ ] Sending in an existing conversation uses `POST /conversations/:id/messages/stream` (SSE over `fetch`).
@@ -356,7 +343,7 @@ DASH-5,DASH-5 Get started with my first provider,Story,Dashboard,M7 · Dashboard
 - [ ] It mentions the free Mock AI option.
 
 **Source:** SPEC.md §2.5 DASH-5, §9 Dashboard"
-SET-1,SET-1 Edit my profile name,Story,Settings,M7 · Dashboard & settings,Medium,2,To Do,settings forms,AUTH-3,ai-hub/implementation-specs/SET-1-profile/SPEC.md,"**As a** user **I want** to change my display name **so that** the app greets me correctly.
+SET-1,SET-1 Edit my profile name,Story,Settings,M7 · Dashboard & settings,Medium,2,To Do,settings forms,AUTH-1,ai-hub/implementation-specs/SET-1-profile/SPEC.md,"**As a** user **I want** to change my display name **so that** the app greets me correctly.
 
 ## Acceptance criteria
 - [ ] The Settings page has a Profile section: an editable name (`PATCH /auth/me`) and a read-only email.
@@ -378,10 +365,10 @@ SET-3,SET-3 Set my chat defaults,Story,Settings,M7 · Dashboard & settings,Low,2
 - [ ] Both are stored locally and persist after a reload.
 
 **Source:** SPEC.md §2.6 SET-3"
-SET-4,SET-4 Sign out from Settings,Story,Settings,M7 · Dashboard & settings,Low,1,To Do,settings auth,SET-1 AUTH-5,ai-hub/implementation-specs/SET-4-settings-sign-out/SPEC.md,"**As a** user **I want** a sign-out button on the Settings page **so that** I can find it where I expect.
+SET-4,SET-4 Sign out from Settings,Story,Settings,M7 · Dashboard & settings,Low,1,To Do,settings auth,SET-1 AUTH-1,ai-hub/implementation-specs/SET-4-settings-sign-out/SPEC.md,"**As a** user **I want** a sign-out button on the Settings page **so that** I can find it where I expect.
 
 ## Acceptance criteria
-- [ ] A ""Sign out"" button at the bottom of the Settings page, with the same behavior as the user menu (AUTH-5).
+- [ ] A ""Sign out"" button at the bottom of the Settings page, with the same behavior as the user menu (AUTH-1).
 
 **Source:** SPEC.md §2.6 SET-4"
 QA-1,"QA-1 Polish states, responsiveness and keyboard support",Task,Quality,M8 · Quality & release,Medium,3,To Do,quality a11y responsive,CHAT-12 CMP-3 DASH-5 SET-4 PROV-6,ai-hub/implementation-specs/QA-1-polish-audit/SPEC.md,"**As a** user **I want** every screen to handle loading, empty and error cases and to work on any device and from the keyboard **so that** the app feels finished.
@@ -394,7 +381,7 @@ QA-1,"QA-1 Polish states, responsiveness and keyboard support",Task,Quality,M8 �
 - [ ] Every destructive action uses `ConfirmDialog`.
 
 **Source:** SPEC.md §5.6, §6.5, §8 Phase 9"
-QA-2,QA-2 Add automated tests for critical logic,Task,Quality,M8 · Quality & release,Medium,3,To Do,quality tests,CHAT-2 AUTH-2 PROV-1 FND-5,ai-hub/implementation-specs/QA-2-automated-tests/SPEC.md,"**As a** developer **I want** tests for the riskiest logic **so that** future changes don't silently break it.
+QA-2,QA-2 Add automated tests for critical logic,Task,Quality,M8 · Quality & release,Medium,3,To Do,quality tests,CHAT-2 AUTH-1 PROV-1 FND-5,ai-hub/implementation-specs/QA-2-automated-tests/SPEC.md,"**As a** developer **I want** tests for the riskiest logic **so that** future changes don't silently break it.
 
 ## Acceptance criteria
 - [ ] Vitest + RTL tests for `format.ts`, `errors.ts`, the SSE parser (including an event split across chunks), `LoginPage` validation and `ProviderCard` states.

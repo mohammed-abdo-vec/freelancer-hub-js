@@ -13,7 +13,7 @@ HERE = Path(__file__).parent
 # Build order: milestones roughly follow SPEC.md §8 phases. Order inside a milestone = suggested order.
 MILESTONES = [
     ('M1 · Foundation', ['FND-1', 'FND-2', 'FND-3', 'FND-4', 'FND-5']),
-    ('M2 · Authentication', ['AUTH-1', 'AUTH-2', 'AUTH-6', 'AUTH-3', 'AUTH-4', 'AUTH-5']),
+    ('M2 · Authentication', ['AUTH-1']),
     ('M3 · Providers', ['PROV-1', 'PROV-2', 'PROV-3', 'PROV-4', 'PROV-5', 'PROV-6']),
     ('M4 · Chat: read & organize', ['CHAT-7', 'CHAT-14', 'CHAT-4', 'CHAT-5', 'CHAT-13', 'CHAT-8', 'CHAT-9']),
     ('M5 · Chat: send & stream', ['CHAT-2', 'CHAT-10', 'CHAT-3', 'CHAT-11', 'CHAT-1', 'CHAT-6', 'CHAT-12']),

@@ -6,7 +6,7 @@ type: Story
 priority: Medium
 points: 2
 status: To Do
-depends_on: [AUTH-3]
+depends_on: [AUTH-1]
 labels: [settings, forms]
 spec: ../implementation-specs/SET-1-profile/SPEC.md
 ---
